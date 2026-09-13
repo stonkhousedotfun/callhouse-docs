@@ -1,9 +1,11 @@
 # Fees
 
-Every fee is taken out of premium, and premium exists only when a buyer fills. A week with no buyer is charged nothing by anyone.
+The two live fees, Overcall's and Callhouse's, are taken out of premium, and premium exists only when a buyer fills. With those two fees, a week with no buyer is charged nothing.
+
+Valorem's engine fee works differently. It is not taken out of premium. If Valorem switches it on and the vault admin accepts it, it is 15 bps of written notional, paid in NVDA from the vault's own balance on top of the locked collateral at each write, whether or not a buyer fills. It is off today, and the vault will not write while it is on and not accepted.
 
 {% hint style="warning" %}
-Premium is paid only if a buyer fills. Fees reduce what a filled week pays you. They are never charged on your deposit, on idle NVDA, or on strike proceeds from assignment.
+Premium is paid only if a buyer fills. The Overcall and Callhouse fees reduce what a filled week pays you. They are never charged on your deposit, on idle NVDA, or on strike proceeds from assignment. The Valorem engine fee, off and not accepted today, would be charged in NVDA on every write if the vault admin ever accepted it, so it would reduce depositors' NVDA.
 {% endhint %}
 
 ## Fee table
@@ -12,20 +14,22 @@ Premium is paid only if a buyer fills. Fees reduce what a filled week pays you. 
 |---|---|---|---|
 | **Overcall** | 5% of gross premium | On each fill | A second payment inside the Seaport order itself. The buyer's USDG is split in the same transaction: 95% to the vault, 5% to Overcall. |
 | **Callhouse protocol fee** | 5% of the premium the vault receives | At harvest, only when that premium is above zero | Accrued when premium is harvested (at `rollClose`, or at a deposit checkpoint) and sent to the fee Safe |
-| **Valorem engine fee** | 15 bps of notional | Currently off | If Valorem switches it on, the vault refuses to write until the Admin Safe explicitly accepts it |
+| **Valorem engine fee** | 15 bps of written notional (minimum 1 base unit), in NVDA | Currently off. If on and accepted: at each write, filled or not | Pulled by Valorem from the vault's NVDA on top of the collateral. If Valorem switches it on, `rollOpen` reverts until the vault admin calls `acceptValoremFee(true)` |
 
 **Stacked, the two live fees come to 9.75% of what the buyer paid:** Overcall's 5% of the gross, then Callhouse's 5% of the 95% that reaches the vault.
 
 ### What is never charged
 
+These hold for the Overcall fee and the Callhouse protocol fee. They would not hold for the Valorem engine fee if the vault admin ever accepted it: that fee is paid in NVDA from the vault's balance on every write, including weeks that never fill.
+
 * No fee on deposits.
 * No fee on idle NVDA.
 * No fee on strike proceeds from assignment. They are your collateral sold at the strike, not income, and they are credited to depositors in full. This exclusion is in the contract code, not a policy setting, so no admin action can put strike proceeds back under the fee.
-* No fee on an unfilled week. The vault harvests zero, and the fee on zero is zero.
+* No fee on an unfilled week. There is no premium, and the fee on zero premium is zero. If the week is assigned anyway, the strike proceeds are harvested and credited to depositors without a fee.
 
 ### The ceiling
 
-The protocol fee is set to 5% (500 basis points) at launch. The Admin Safe can change it, but never above **20% of premium**. That ceiling is compiled into the contracts. At the ceiling, the stack would be 24% of what the buyer paid: Overcall's 5%, plus 20% of the remaining 95%.
+The protocol fee is set to 5% (500 basis points) at launch. The vault admin (a single deployer key at launch, the 2-of-3 Admin Safe after the handover) can change it, but never above **20% of premium**. That ceiling is compiled into the contracts. At the ceiling, the stack would be 24% of what the buyer paid: Overcall's 5%, plus 20% of the remaining 95%.
 
 ## Worked example: a filled week
 

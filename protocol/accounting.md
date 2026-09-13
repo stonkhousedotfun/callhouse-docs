@@ -30,6 +30,11 @@ The consequences for anyone reading the share price:
 - A filled week does not raise the share price.
 - An out-of-the-money week leaves it unchanged.
 - An assigned week lowers it, because collateral left and the strike proceeds went to the USDG ledger.
+- Between an exercise and `rollClose` it is lower still than the week's final outcome: the assigned NVDA has already left `lockedAssets()`, while its strike USDG is inside the Valorem claim and appears nowhere in the vault's views except `claimedExerciseProceeds()`.
+
+{% hint style="warning" %}
+**For integrators: `convertToAssets` is not a mark.** It leaves out claimable USDG, queue USDG owed and unredeemed strike USDG in the claim, which make it lower than a position's value. It also values the open short call at zero whether it is far out of the money or deep in it, which can make it higher. Do not use it on its own to price cNVDA as collateral. Add `claimableUsdg(account)` and `previewCompleteRedeem(account)`, which covers a settled queue entry and anything already owed. A queue entry whose epoch has not settled is in none of these figures: its shares have left the account's balance, so neither `convertToAssets(balanceOf(account))` nor `claimableUsdg(account)` counts them, and `previewCompleteRedeem` returns only amounts already owed. Estimate those shares' NVDA with `convertToAssets(queuedSharesOf(account))`; the USDG they earn in escrow has no per-account view until the entry settles. An open cycle carries unmarked assignment risk until `rollClose`.
+{% endhint %}
 
 ## Units
 
@@ -37,7 +42,9 @@ The consequences for anyone reading the share price:
 |---|---|
 | `assets`, `idleAssets()`, `lockedAssets()`, `reservedAssets` | asset base units, 18 decimals (`1e18` = 1 NVDA) |
 | Shares | 18 decimals (`decimals()` returns 18) |
-| `spotUsdg`, strikes, premiums, fees | USDG base units, 6 decimals, per lot of `1e18` asset base units |
+| `spotUsdg`, `strikeUsdg` | USDG base units, 6 decimals, per lot of `1e18` asset base units |
+| Premiums (`grossUsdg`, `Harvest.grossUsdg`), fees (`feeUsdg`, `pendingFeeUsdg`) | USDG base units, 6 decimals, as totals (on a close, `Harvest.grossUsdg` also includes strike proceeds) |
+| Seaport `unitPriceUsdg` | USDG base units, 6 decimals, per contract |
 | `contracts` | whole lots |
 | `*Bps` fields | basis points (`10_000` = 100%) |
 | `accUsdgPerShare` | USDG base units per share, scaled by `1e27` |
@@ -120,12 +127,12 @@ _distributeUsdg(netUsdg)                      all of gross except the fee goes t
 
 It has two callers, and they pass different `feeFree` values:
 
-| Caller | `feeFree` | Why |
+| Caller | Fee-free amount (feeFree) | Why |
 |---|---|---|
 | `rollClose` via `_harvest(usdgFromAssignment)` | `usdgFromAssignment`, the USDG balance change measured across `clear.redeem` in the same transaction, which `RollClose` also emits | Strike proceeds are the assigned depositors' collateral sold at the strike. They are principal, not yield, so they are credited to holders in full and never charged the fee. |
 | `deposit` / `mint` via `_checkpointHarvest()` | `0` | Strike proceeds sit inside the Valorem claim until `rollClose` redeems it, so none can be in the balance when a deposit runs. |
 
-The fee rate is `policy.protocolFeeBps`. It is 500 (5%) at launch (`Policy.launchDefaults`), and `Policy.validate` caps it at 2000 (20%) in bytecode. The fee-free exclusion is code, not a policy field, so no admin setting can bring strike proceeds into the fee base. An unfilled week harvests 0 and is charged nothing.
+The fee rate is `policy.protocolFeeBps`. It is 500 (5%) at launch (`Policy.launchDefaults`), and `Policy.validate` caps it at 2000 (20%) in bytecode. The fee-free exclusion is code, not a policy field, so no admin setting can bring strike proceeds into the fee base. An unfilled week has no premium in the fee base and is charged nothing. If it is assigned anyway, the close harvests the strike proceeds, fee-free.
 
 The fee is charged on the premium that reaches the vault. Overcall separately takes 5% of gross premium as the second Seaport consideration item in the same fill, rounded down per contract and then multiplied (`Policy.splitPremium`, enforced on chain by `SeaportOrderLib`). With both at 5%, the combined deduction is 9.75% of gross premium (`docs/ACCOUNTING.md` §6).
 
@@ -138,7 +145,7 @@ The fee is charged on the premium that reaches the vault. Overcall separately ta
 - `deposit`: phase gate, cap check, checkpoint, `previewDeposit`, transfer in, `_mint`.
 - `mint`: phase gate, checkpoint, `previewMint`, cap check, transfer in, `_mint`.
 
-Without the checkpoint, premium that landed when a buyer filled mid-week would sit un-indexed until `rollClose`. Anyone could then deposit just before the close and take a share of premium earned entirely by other depositors' collateral. With it, the index is fixed first and new shares start from the current value. The checkpoint makes no external call. Its fee goes to `pendingFeeUsdg` and is paid at the close or by `sweepFee`.
+Without the checkpoint, premium that landed when a buyer filled mid-week would sit un-indexed until `rollClose`. Anyone could then deposit just before the close and take a share of premium earned entirely by other depositors' collateral. With it, the index is fixed first and new shares start from the current value. The checkpoint transfers nothing. Its only external call is a read of the vault's own USDG balance (`usdg.balanceOf`). Any fee it charges goes to `pendingFeeUsdg` and is paid at the close or by `sweepFee`.
 
 The checkpoint emits `Harvest(cycleNumber, gross, fee, net)` only if `gross != 0`. The close always emits `Harvest`, including `(0, 0, 0)`. So:
 
@@ -219,15 +226,17 @@ assets = floor(ep.assetsRemaining * shares / ep.sharesRemaining)
 usdg   = min( floor((shares * epochAccUsdgPerShare[e] - queueAccDebt[owner]) / 1e27),  ep.usdgRemaining )
 ```
 
-**Last claimant takes the remainder.** The final claimant has `shares == ep.sharesRemaining` and receives exactly what is left of both, so the epoch ends at zero and the rounding of every earlier entry is absorbed (`test_zeroDust_threeAwkwardClaimantsLeaveNothingBehind`).
+`queueAccDebt` and `epochAccUsdgPerShare` here are the private `_queueAccDebt` and `_epochAccUsdgPerShare`. Neither is in the public ABI. Read an entry's figures with `previewCompleteRedeem(owner)`, which uses the same `_entryUsdg` as the payout.
+
+**Last claimant takes the remainder.** The final claimant has `shares == ep.sharesRemaining` and receives exactly what is left of both, so the epoch ends at zero (`test_zeroDust_threeAwkwardClaimantsLeaveNothingBehind`). The remainder absorbs the rounding of every earlier entry, and also anything in the pot that no entry's index growth accounts for: accrual on shares sent straight to the vault address, or a residual carried from an earlier clamped settlement. Entries draw in the order they are collected. If `_takeAccrued` clamped the escrow's accrual, each entry collected earlier is still paid its own index growth, capped at what the epoch still holds, so the shortfall falls on whoever collects last, and on the entries just before it if the shortfall is larger than that entry's growth.
 
 {% hint style="info" %}
 **Why USDG is per entry (fixed 2026-09-13).** The escrow's accrual is one pot, earned tranche by tranche on whatever the escrow held when each tranche was indexed. It used to be split pro rata by shares, so a deposit that indexed premium between two queue entries moved value from the earlier queuer to the later one. In the test sequence, alice's epoch USDG was 1,504,166 instead of 4,512,500, and a newcomer who deposited and then queued could take most of an earlier queuer's premium. The per-entry index fixes it (`test/unit/VaultQueueFairness.t.sol`, including a fuzz test).
 {% endhint %}
 
-**Settling is not paying.** Moving an entry into `owedAssets` / `owedQueueUsdg` touches no token and emits `QueueEntrySettled`. That happens both when `queueRedeem` flushes a stale entry and inside `completeRedeem`. Only `_payoutOwed` transfers tokens, and it emits `CompleteRedeem`. So an issuer freeze on the Stock Token can stop the payout but never the act of queueing (`test_issuerFreezeDoesNotBlockQueueingForAStaleSlotHolder`). Indexers should reduce epoch balances on `QueueEntrySettled` and reserves on `CompleteRedeem`.
+**Settling is not paying.** Moving an entry into `owedAssets` / `owedQueueUsdg` touches no token and emits `QueueEntrySettled`. That happens both when `queueRedeem` flushes a stale entry and inside `completeRedeem`. Only `_payoutOwed` transfers tokens, and `completeRedeem` emits `CompleteRedeem` after it. So an issuer freeze on the Stock Token can stop the payout but never the act of queueing (`test_issuerFreezeDoesNotBlockQueueingForAStaleSlotHolder`). Indexers should reduce epoch balances on `QueueEntrySettled` and reserves on `CompleteRedeem`.
 
-**What a queued position receives.** The escrowed shares stay in `totalSupply` until settlement. They earn their share of every distribution up to and including the close's harvest, and they are priced against the collateral that is idle after the claim is redeemed. After an assigned week, the epoch therefore pays a mix of remaining NVDA and USDG (strike proceeds and premium), not a guaranteed return of the token. The escrow is a single account (the vault's own address), but its USDG is paid per entry: each entry receives what its own shares earned between the moment they were escrowed and settlement.
+**What a queued position receives.** The escrowed shares stay in `totalSupply` until settlement. They earn their share of every distribution up to and including the close's harvest, and they are priced against the collateral that is idle after the claim is redeemed. After an assigned week, the epoch therefore pays a mix of remaining NVDA and USDG (strike proceeds and premium), not a promise of a fixed number of tokens. The escrow is a single account (the vault's own address), but its USDG is paid per entry: each entry receives what its own shares earned between the moment they were escrowed and settlement.
 
 **Reserves are outside NAV.** `reservedAssets` is subtracted in `totalAssets()`, and `usdgReservedForQueue` is subtracted from what holders can claim. A settled but uncollected redemption neither dilutes nor is diluted by anyone. `completeRedeem` has no deadline.
 
@@ -298,4 +307,4 @@ For the depositor-level view, see [Withdrawing and the redeem queue](../getting-
 
 `maxIndexRoundingDrift` is the handler's exact bound for the index drift described above. The run is refused if it ever reaches one dollar. The queue reserve and the pending fee are asserted with no allowance (invariant 6).
 
-Know the limits of this suite. According to `docs/AUDIT-SCOPE.md` §6, the handler never calls `setPolicy`, `setDepositCap`, `setFeeRecipient`, `setMaxPriceAge`, `acceptValoremFee`, `sweepFee`, `claimUsdgTo` or `invalidateAllListings`. It never donates tokens to the vault, and it runs against mocks of Valorem, Seaport and the registry. Those paths are covered, if at all, by deterministic unit tests.
+Know the limits of this suite. According to `docs/AUDIT-SCOPE.md` §6, the handler never calls `setPolicy`, `setDepositCap`, `setFeeRecipient`, `setMaxPriceAge`, `acceptValoremFee`, `sweepFee`, `claimUsdgTo` or `invalidateAllListings`. It never donates tokens or sends shares to the vault, and it runs against mocks of Valorem, Seaport and the registry. Those paths are covered, if at all, by deterministic unit tests. In particular, `queuedShares == balanceOf(vault)` in invariant 4 holds in the suite only because nothing there sends shares to the vault. The contract does not reject a share transfer to its own address, so any holder can break the equality with one transfer, and those shares are never burned. Two more properties rest on unit tests rather than on any `invariant_*` function. The mock registry never changes the lot, so the one-token lot check is covered only by `VaultLotSize.t.sol`. No invariant checks that a queue entry received its own index growth, so the per-entry USDG payout is asserted only by `VaultQueueFairness.t.sol`.

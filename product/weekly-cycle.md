@@ -30,20 +30,32 @@ The vault has no calendar of its own. Every deadline comes from Overcall's regis
 Only the keeper can open a cycle, and only while the registry says writing is open. The keeper chooses one of the registry's strike rungs (up to five per cycle) and a number of contracts. The vault then checks everything itself before any NVDA moves:
 
 * the vault is Idle and writes are not halted;
-* the option is approved in the registry's current cycle, and its exercise and expiry match the cycle's;
+* the option is approved in the registry's current cycle, is an NVDA call settled in USDG with a lot size of exactly one NVDA per contract, and its exercise and expiry match the cycle's;
 * the cycle's expiry is after its exercise timestamp and no more than 21 days away;
 * the strike is 3% to 12% above spot (launch band);
 * the price feed is no older than 4 days (launch setting) and the Stock Token has not paused its oracle;
 * the number of contracts is at least 1, at most 50, and at most 95% of idle NVDA in whole tokens;
-* Valorem's engine fee is off, or governance has accepted it.
+* Valorem's engine fee is off, or the admin has accepted it.
 
-If any check fails, nothing is written and the vault stays Idle for the week. Deposits and instant redemptions stay open. A skipped week is a normal outcome.
+If any check fails, nothing is written and the vault stays Idle. The keeper tries again while the registry's write window is open, so a temporary problem such as a stale price feed can still end in a write later that week. If no write lands before the window closes, the week is skipped. Deposits and instant redemptions stay open, and a skipped week is a normal outcome.
 
 ### During Listed: listings
 
 The keeper proposes a Seaport order, and the vault authorises it on chain only if every field matches the vault's own state and the gross premium is at least 0.40% of spot notional. One listing can be live at a time, at most three can be signed per cycle, and every listing must end by the exercise timestamp. The keeper or the Guardian can cancel a listing.
 
 Buyers can fill a listing in part or in full. Each fill pays USDG to the vault immediately.
+
+### How the keeper chooses, by default
+
+The contracts set the bounds. Inside them, the keeper software (`keeper/src/policy.ts` and `keeper/src/config.ts` in the app repository) makes these choices with its default settings. They are operating choices, not commitments, and the admin can change them without a contract change.
+
+* **Strike:** the nearest out-of-the-money rung, meaning the lowest strike inside the band. That is where a weekly call has premium, and it is also the rung most likely to be assigned.
+* **Size:** the largest the policy allows, 95% of idle NVDA in whole tokens, capped at the contract limit. The whole written size goes into one listing.
+* **Price:** the vault's premium floor for the current spot (0.40% of spot per contract at launch), raised to the last observed fill on Overcall's book for that rung, but never more than three times the floor, never below 20 base units and never above the strike. With the default margin setting of 0, a week with no fill history lists at the floor.
+* **Listing length:** until the exercise timestamp.
+* **Relisting:** after a cancel or an invalidated order, the keeper relists once by default, never below its previous ask. The vault's limit of three signed listings a cycle applies regardless.
+
+If Overcall's book does not show the listing, the keeper keeps the signed order and serves it from its own `/orders` endpoint. The app is not yet wired to read it: its cycle page fills only orders that appear on Overcall's book, so as built, a listing Overcall rejects or drops is an unfilled week.
 
 ### Listed → Exercisable: `lockBook`
 

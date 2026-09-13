@@ -3,7 +3,7 @@
 Assignment can take the collateral at the strike. When a call holder exercises, Valorem takes NVDA from the collateral the vault locked and leaves the strike price in USDG. Depositors lose the NVDA and receive the strike USDG instead, with no protocol fee taken from it.
 
 {% hint style="warning" %}
-**What assignment costs you:** every bit of upside above the strike for that week, and the NVDA itself. v1 does not buy the stock back, so after an assigned week the vault holds less NVDA and more USDG, and the cNVDA share price in NVDA terms falls. You keep the premium.
+**What assignment costs you:** every bit of upside above the strike for that week, and the NVDA itself. v1 does not buy the stock back, so after an assigned week the vault holds less NVDA and more USDG, and the cNVDA share price in NVDA terms falls. You keep any premium the week earned, net of fees. A week with no fill can still be assigned, and then there is no premium to keep.
 {% endhint %}
 
 ## When it can happen
@@ -16,7 +16,11 @@ Exercise happens entirely inside Valorem, with no call into the vault. The NVDA 
 
 **Partial assignment is normal.** Valorem assigns exercises by bucket, not perfectly pro rata. How many of the vault's contracts are assigned is Valorem's decision, not the vault's: a vault that wrote N contracts can come back with anywhere from none to all N assigned. Settlement returns whatever collateral was not assigned and does not depend on how many of the vault's own option tokens were sold.
 
-| Outcome | NVDA back at `rollClose` | USDG from the claim |
+{% hint style="warning" %}
+**Unsold contracts can still be assigned.** Option tokens for the same strike and cycle are interchangeable, and anyone can write them on Valorem. When a holder exercises, Valorem assigns the exercise across the claims of everyone who wrote that option, not only to writers whose tokens were sold. So a week where the vault sold few or none of its contracts can still end with some of its collateral assigned, if other people's contracts on the same rung were bought and exercised. The vault earns premium only on what it sold, but its assignment exposure is everything it wrote.
+{% endhint %}
+
+| Outcome | NVDA back at the close | USDG from the claim |
 |---|---|---|
 | None assigned | All the NVDA that was written | None |
 | Partly assigned | The NVDA behind the contracts not assigned | Strike x contracts assigned |
@@ -42,7 +46,7 @@ What you do with the USDG is up to you. It sits in your claimable balance until 
 
 ## Worked example
 
-The numbers below are illustrative, from the vault's accounting reference, and are not a forecast. 20 NVDA is deposited by one depositor, who holds 20 cNVDA. The vault writes 10 contracts at a $231 strike. A buyer pays 2.00 USDG per contract, so the vault receives 19.00 USDG after Overcall's 5%.
+The numbers below are illustrative and are not a forecast. The premium, fee and fully assigned figures follow the vault's accounting reference; the share-price lines and the partial case apply the same rules. 20 NVDA is deposited by one depositor, who holds 20 cNVDA. The vault writes 10 contracts at a $231 strike. A buyer pays 2.00 USDG per contract, so the vault receives 19.00 USDG after Overcall's 5%.
 
 ### Fully assigned
 

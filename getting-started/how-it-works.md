@@ -16,7 +16,7 @@ Premium is paid only if a buyer fills. Assignment can take the collateral at the
 
 4. **A buyer fills, or nobody does.** If a buyer fills, the USDG arrives in the same transaction: 95% to the vault and 5% to Overcall. Listings can be filled in part. If nobody fills, the week's premium is zero and nobody charges a fee. When the exercise timestamp arrives, the book closes and deposits close with it.
 
-5. **The exercise window.** Anyone holding one of this week's calls can exercise it between the exercise timestamp and expiry. Overcall's current window is 24 hours. Exercise happens inside Valorem: it takes NVDA collateral at the strike and leaves the strike price in USDG. See [Assignment](../product/assignment.md).
+5. **The exercise window.** Anyone holding one of this week's calls can exercise it between the exercise timestamp and expiry. Overcall's current window is 24 hours. Exercise happens inside Valorem: it takes NVDA collateral at the strike and leaves the strike price in USDG. Valorem spreads each exercise across every writer of that option series, whoever sold the call that was exercised, so the vault's collateral can be assigned even if its own listing filled only in part or did not fill at all. See [Assignment](../product/assignment.md).
 
 6. **The week closes.** After expiry, `rollClose` redeems the vault's Valorem claim. NVDA that was not assigned comes back, and strike USDG comes back where it was. The vault takes its 5% protocol fee from the premium only, credits the rest of the USDG to shareholders, settles the redeem queue, and returns to Idle. The keeper can call `rollClose` from expiry, and anyone can call it one hour later.
 
@@ -55,7 +55,7 @@ Your position has two parts, and they move for different reasons.
 
 | | Unit | What moves it |
 |---|---|---|
-| **cNVDA share price** | NVDA per share | Only changes in the vault's NVDA balance: deposits, redemptions and assignment. |
+| **cNVDA share price** | NVDA per share | Assignment, which removes NVDA without burning shares. Deposits and redemptions (instant, or queued and settled pro rata at `rollClose`) mint or burn shares pro rata and leave it unchanged, apart from rounding in the vault's favour. |
 | **Claimable USDG** | USDG | Premium from filled weeks, net of fees, and strike proceeds from assignment. |
 
 Premium is never folded into the share price. A filled week leaves the share price where it was and adds USDG you can claim. An assigned week lowers the share price in NVDA terms, because NVDA left the vault, and adds the strike USDG to your claim instead. The short call is never marked to market, and no price feed is read when the week settles.
@@ -68,6 +68,6 @@ Premium is never folded into the share price. A filled week leaves the share pri
 | Bought, expired out of the money | Kept, net of fees | Comes back at `rollClose` |
 | Bought and exercised | Kept, net of fees | Assigned NVDA is replaced by strike USDG, credited without a fee |
 
-Which ending you get depends on the order book and on where NVDA trades. The vault does not decide it.
+Which ending you get depends on the order book, on what holders of this week's calls do (including calls other writers sold in the same series), and on how Valorem spreads exercise across those writers. The vault does not decide it.
 
 For the technical version of this loop, see [Architecture](../protocol/architecture.md) and [Accounting](../protocol/accounting.md).

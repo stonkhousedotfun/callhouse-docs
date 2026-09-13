@@ -2,13 +2,13 @@
 
 The vault's trading rules come in two layers:
 
-* **Launch values**: the settings the vault starts with. The Admin Safe (2-of-3) can change them.
+* **Launch values**: the settings the vault starts with. The vault admin can change them: a single deployer key at launch, and the 2-of-3 Admin Safe after the handover (see [Roles and admin powers](../protocol/roles.md)).
 * **Hard caps**: bounds compiled into the contract bytecode. Every policy change is checked against them, and no key can move them. Changing a hard cap would take a new vault.
 
 These are contract bounds, not intentions or targets. They are also not forecasts: none of them says what a week will pay.
 
 {% hint style="warning" %}
-The caps rule out the worst settings, such as selling calls at the money or charging a fee above 20% of premium. They do not rule out poor settings inside the caps, and there is no timelock on policy changes in v1. Any change is visible on chain as a `PolicyUpdated` event.
+The caps rule out the worst settings, such as selling calls at the money or charging a fee above 20% of premium. They do not rule out poor settings inside the caps, and there is no timelock on policy changes in v1. Every admin change to these settings is visible on chain: the policy fields (strike band, premium floor, utilisation, protocol fee and contracts cap) as a `PolicyUpdated` event, the deposit cap as `DepositCapUpdated`, the price age as `MaxPriceAgeUpdated` and the Valorem fee switch as `ValoremFeeAccepted`.
 {% endhint %}
 
 ## The table
@@ -52,7 +52,7 @@ Charged on the premium the vault receives, only when it is above zero. Never on 
 
 ### Contracts per cycle: 50
 
-A hard limit on position size per cycle, on top of the utilisation limit. The Admin Safe can raise it; there is no compiled ceiling other than the utilisation limit and the deposit cap.
+A hard limit on position size per cycle, on top of the utilisation limit. The admin can raise it; there is no compiled ceiling other than the utilisation limit and the deposit cap.
 
 ### Listings per cycle: 3
 
@@ -68,11 +68,11 @@ The registry that sets the cycle is controlled by a third party, and nothing on 
 
 ### Deposit cap: 20 NVDA
 
-The most NVDA the vault accepts, measured on NVDA idle plus NVDA locked in the current call. It starts small because the contracts are unaudited. The Admin Safe can change it, and there is no compiled ceiling.
+The most NVDA the vault accepts, measured on NVDA idle plus NVDA locked in the current call, not counting NVDA already set aside for settled redemptions. It starts small because the contracts are unaudited today and have never run a live week. The launch plan is to publish four weekly results, including any unfilled weeks, before raising it. The admin can change it at any time, with no timelock (a `DepositCapUpdated` event is emitted), and there is no compiled ceiling.
 
 ### Valorem engine fee: not accepted
 
-Valorem can charge 15 bps of notional on writes. It is currently off. If it is switched on, the vault stops writing until the Admin Safe explicitly accepts it, because on a weekly out-of-the-money call that fee can be a large part of the premium.
+Valorem can charge 15 bps of written notional on writes. Unlike the other fees, it is not taken out of premium: it is paid in NVDA from the vault's balance on top of the collateral at each write, whether or not a buyer fills. It is currently off. If it is switched on, the vault stops writing until the admin explicitly accepts it (`acceptValoremFee(true)`), because on a weekly out-of-the-money call that fee can be a large part of the premium.
 
 ## Related
 

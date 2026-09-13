@@ -43,9 +43,9 @@ Writing these pages meant checking every claim against the code, and that surfac
 | Severity (internal) | Defect | Fix |
 |---|---|---|
 | High | **Lot size.** The vault priced strikes, the premium floor and utilisation per token but wrote whatever lot size the registry reported. The registry owner can change the lot size between cycles, so an unrescaled strike ladder would have been written in the money. In the proof of concept, at a lot of 2 tokens a buyer took about $4,879 out of an $11,000 book. | `ValoremLib.writeCalls` refuses any lot other than exactly one token (`test/unit/VaultLotSize.t.sol`) |
-| Medium | **Redeem-queue USDG shared unfairly.** Queue entries in the same epoch shared one USDG pot pro rata by shares, so premium indexed between two entries moved from the earlier queuer to the later one. A newcomer could deposit and then queue to take most of an earlier queuer's premium (6,768,750 of 9,025,000 base units in the test). | Per-entry index snapshot: each entry is paid its own shares' index growth (`test/unit/VaultQueueFairness.t.sol`) |
+| High | **Redeem-queue USDG shared unfairly.** Queue entries in the same epoch shared one USDG pot pro rata by shares, so premium indexed between two entries moved from the earlier queuer to the later one. A newcomer could deposit and then queue to take most of an earlier queuer's premium (6,768,750 of 9,025,000 base units in the test). | Per-entry index snapshot: each entry is paid its own shares' index growth (`test/unit/VaultQueueFairness.t.sol`) |
 
-The same 2026-09-12 pass added a `QueueEntrySettled` event, refreshed the error and ABI copies used by the keeper, indexer and web app, and added indexer coverage of `FeeSwept`. `docs/AUDIT-SCOPE.md` §6 lists 13 contract defects found and fixed across the build and this review (it counts the two high findings as one item). The source documents do not break down how the 51 surviving findings map to these fixes. It also records that a keeper-focused sweep the same day fixed 18 off-chain defects, outside contract scope.
+The 2026-09-12 review pass also added a `QueueEntrySettled` event, refreshed the error and ABI copies used by the keeper, indexer and web app, and added indexer coverage of `FeeSwept`. `docs/AUDIT-SCOPE.md` §6 lists 15 contract defects found and fixed: 13 during the build and the 2026-09-12 review (it counts that review's two high findings, the tenor cap and the window mismatch, as one item), plus the two above. The source documents do not break down how the 51 surviving findings map to these fixes. It also records that a keeper-focused sweep the same day fixed 18 off-chain defects, outside contract scope.
 
 ## Properties enforced in bytecode
 
@@ -78,13 +78,13 @@ Full detail is on [Roles and admin powers](roles.md).
 | Key | Powers | Worst case |
 |---|---|---|
 | Keeper (hot EOA) | `rollOpen`, `approveListing`, `cancelListing`, `invalidateAllListings`, early `rollClose` | Skipped weeks. Or writes and listings on the least favourable terms the current policy allows, filled by a buyer it controls. It cannot move a token, route premium to itself, or step outside the policy. |
-| Guardian (1 of 1) | `haltWrites`, `cancelListing`, `invalidateAllListings` | Writes halted and listings killed until the admin Safe acts. Exits and settlement keep working. It cannot unhalt. |
-| Admin Safe (2 of 3) | Policy within the caps, fee recipient, deposit cap, `maxPriceAge`, Valorem fee acceptance, halt and unhalt, role grants; no timelock | Up to 20% of premium, redirected to an address it chooses. Policy loosened to its compiled-in limits, with rolls run through a keeper it appoints. It cannot transfer tokens, charge a fee on strike proceeds, upgrade, or block exits. |
+| Guardian (1 of 1) | `haltWrites`, `cancelListing`, `invalidateAllListings` | Writes halted and listings killed until the admin acts. Exits and settlement keep working. It cannot unhalt. |
+| Admin (at launch the deployer key; after `script/HandoverAdmin.s.sol`, the 2-of-3 Safe) | Policy within the caps, fee recipient, deposit cap, `maxPriceAge`, Valorem fee acceptance, halt and unhalt, role grants; no timelock | Up to 20% of premium, redirected to an address it chooses. Policy loosened to its compiled-in limits, with rolls run through a keeper it appoints. It cannot transfer tokens, charge a fee on strike proceeds, upgrade, or block exits. Until the handover, one EOA holds all of these powers (`docs/DEPLOY.md`). |
 | Overcall registry owner (third-party EOA) | Sets each cycle's rungs, timestamps and lot size for the market | Refused by the vault: tenor over 21 days, inverted windows, unapproved or wrong-cycle rungs, option metadata that disagrees with the cycle, and (since 2026-09-13) any lot size other than one token. Not defended: bad but in-band strike ladders and the cycle-replacement race (`docs/AUDIT-SCOPE.md` §5). |
-| NVDA Stock Token issuer (third party) | Transfer pause, account blocklist, oracle pause, burn from any holder (`adminBurn`), beacon upgrade; the role holders observed were single EOAs (`ops/recon/R6-stock-token.md` in the app repository) | Settlement and NVDA transfers stop. Queueing and USDG claims keep working. There is no technical mitigation. |
-| USDG issuer (third party) | Freeze, wipe of frozen balances, pause, upgrade; admin behind a 24-hour timelock (`R6-stock-token.md` §7) | USDG claims and queue USDG payouts stop. The fee payment cannot revert `rollClose`, but a close that has to receive strike USDG from Valorem can revert if the vault is frozen (`docs/AUDIT-SCOPE.md` §5, area of concern 2). |
+| NVDA Stock Token issuer (third party) | Transfer pause, account blocklist, oracle pause, burn from any holder (`adminBurn`), beacon upgrade; the role holders observed were single EOAs (`ops/recon/R6-stock-token.md` in the app repository) | A transfer pause, or a blocklist entry on the vault, stops NVDA transfers and with them settlement. An oracle pause stops only `rollOpen` and `approveListing`; settlement never reads the oracle, so an open week still closes. Separately, vault-held NVDA can be burned (`adminBurn`) or the token logic replaced by upgrade. Queueing and USDG claims keep working while transfers are frozen. There is no technical mitigation. |
+| USDG issuer (third party) | Freeze, wipe of frozen balances, pause, upgrade; admin behind a 24-hour timelock (`R6-stock-token.md` §7) | USDG claims and queue USDG payouts stop, and a frozen vault's USDG can be wiped. The fee payment cannot revert `rollClose`, but a close that has to receive strike USDG from Valorem can revert if the vault is frozen (`docs/AUDIT-SCOPE.md` §5, area of concern 2). |
 | Chainlink feed owner (third party) | Can rotate the aggregator or gate reads on the proxy (`ops/recon/R5-price-feed.md`, verification pass) | Writes stop (stale or reverting price). Settlement does not read the feed. |
-| Valorem Clear `feeTo` (the Overcall fee EOA) | Switch the 15 bps notional engine fee on, with no timelock | Writes stop until the admin Safe decides whether to accept the fee. |
+| Valorem Clear `feeTo` (the Overcall fee EOA) | Switch the 15 bps notional engine fee on, with no timelock | Writes stop until the admin decides whether to accept the fee. |
 
 Depositor-level disclosure of these risks is on [Risks](../product/risks.md).
 
@@ -92,7 +92,7 @@ Depositor-level disclosure of these risks is on [Risks](../product/risks.md).
 
 Everything here was run locally by the team. The GitHub Actions account currently fails before any step runs, so CI has confirmed nothing independently (`README.md`, "CI"; `docs/AUDIT-SCOPE.md` §6). None of it is an audit.
 
-- **Unit and invariant tests: 319 tests in 14 suites, all passing,** against mock Valorem, Seaport, registry and feed contracts. Measured 2026-09-13 at `callhouse-contracts` commit `6ed528f`, after the two fixes above (`docs/AUDIT-SCOPE.md` §6; `README.md`). This includes the eight invariants, run for 64 runs at depth 600.
+- **Unit and invariant tests: 319 tests in 14 suites, all passing,** against mock Valorem, Seaport, registry and feed contracts. Measured 2026-09-13 after the two fixes above (fix commit `d2c3b6d` in `callhouse-contracts`; `docs/AUDIT-SCOPE.md` §6; `README.md`). The commit hashes `SECURITY.md` and `docs/AUDIT-SCOPE.md` cite for this run (`6ed528f`, `b0ff57b`) predate a history rewrite and are not in the current history. This includes the eight invariants, run for 64 runs at depth 600.
 - **Fork tests against live chain 4663: 21 tests,** in `test/fork/ForkLive.t.sol`. They cover:
   - code presence, versions and decimals at every address
   - the registry pair binding and rejection of the JUGGERNAUT registry
@@ -108,7 +108,7 @@ Everything here was run locally by the team. The GitHub Actions account currentl
   - Cycle 3: filled, with a queued redemption and 9 of 23 contracts assigned on the real clearinghouse.
 
   It was re-run and passed after the fee change on 2026-09-13 (`keeper/DRYRUN.md` in the app repository; `docs/AUDIT-SCOPE.md` §6). The registry and feed were mocks seeded with live data, Overcall's API was a stub, and token balances were written into storage. Assignment involved a single exerciser and a single writer, so Valorem's bucketed assignment was not meaningfully exercised.
-- **Deploy rehearsal.** The full deploy, verify and Safe-configure flow passed on an anvil fork with real Safes on 2026-09-13 (`docs/DEPLOY.md`, "Rehearsal record").
+- **Deploy rehearsal.** The full deploy, verify, Safe-configure and admin-handover flow (bootstrap key to Safe) passed on an anvil fork with real Safes on 2026-09-13 (`docs/DEPLOY.md`, "Rehearsal record").
 
 According to `docs/AUDIT-SCOPE.md` §6, this evidence does **not** prove the following:
 
@@ -121,8 +121,8 @@ According to `docs/AUDIT-SCOPE.md` §6, this evidence does **not** prove the fol
 
 From `SECURITY.md` §5:
 
-1. **EIP-1271 against Overcall's live validator.** One real 1-contract listing is planned before launch. The self-hosted fill page is the fallback.
-2. **Keeper pricing at exactly the policy floor.** An upward price tick between the keeper's read and `approveListing` reverts `PremiumBelowMinimum`. It self-heals on the next attempt; whether to add a margin is undecided.
+1. **EIP-1271 against Overcall's live validator.** One real 1-contract listing is planned before launch. `SECURITY.md` names the self-hosted fill page as the fallback, but as built that page reads only Overcall's book, so it has nothing to fill if Overcall rejects the listing. The keeper's own `/orders` fallback is not yet wired into the app (`docs/WIRING.md` §7 in the app repository).
+2. **Keeper pricing at exactly the policy floor.** An upward price tick between the keeper's read and `approveListing` reverts `PremiumBelowMinimum`. It self-heals on the next attempt. The keeper now has an optional `PREMIUM_MARGIN_BPS` setting (0 to 1000 bps above the floor) that absorbs such a tick at the cost of a higher ask. Its default is 0, which still prices at the floor, and which value to run with is undecided.
 3. **Gas cost of the deposit-time harvest checkpoint.** To be measured on the first live week.
 
 ## Audit plan
@@ -130,7 +130,7 @@ From `SECURITY.md` §5:
 An external audit is planned before mainnet deployment. The scope document, `docs/AUDIT-SCOPE.md` in `callhouse-contracts`, asks for:
 
 - a manual review of the seven in-scope Solidity files: `Vault`, `Distributor`, `AdapterValorem`, `AdapterSeaport`, `ValoremLib`, `SeaportOrderLib` and `Policy`
-- a configuration review of the deploy, configure and verify scripts, the deploy runbook and the role topology
+- a configuration review of the deploy, configure, admin-handover and verify scripts, the deploy runbook and the role topology, including the bootstrap-admin phase and the handover's safety conditions
 - a written verdict on each assumption the vault makes about the third-party contracts
 
 The audit commit will be pinned and tagged at engagement. This page will be updated with the auditor, the report and the audited commit once they exist.
@@ -139,6 +139,6 @@ The audit commit will be pinned and tagged at engagement. This page will be upda
 
 Do not open a public issue.
 
-The disclosure contact is published at **`https://callhouse.xyz/.well-known/security.txt`** (RFC 9116) and on `https://callhouse.xyz/legal#reporting`. Until a contact address is configured, no address is designated, and `security.txt` returns 404 on purpose (`SECURITY.md` §6). If you get a 404, no reporting channel exists yet. Do not rely on addresses found elsewhere.
+Send reports to **security@callhouse.finance**. The same address is published at `https://callhouse.finance/.well-known/security.txt` (RFC 9116) and on `https://callhouse.finance/legal#reporting` (`SECURITY.md` §6). Do not rely on addresses found elsewhere. `callhouse.xyz` is not a Callhouse domain.
 
 A bug bounty with a dedicated disclosure channel is planned to open in mainnet week 2. Until then the contracts are unaudited and no bounty is offered.

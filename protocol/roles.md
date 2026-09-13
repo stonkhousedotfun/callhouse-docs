@@ -22,11 +22,11 @@ The fee recipient (the fee Safe) holds no role. It can only receive the protocol
 {% endhint %}
 
 - **The handover is two separate steps with a Safe transaction in between.**
-  - `STEP=grant` gives the admin role to the Safe. It refuses a Safe with a threshold below 2, fewer owners than the threshold, or any module enabled.
+  - `STEP=grant` gives the admin role to the Safe. It refuses a `SAFE_ADMIN` that has no code (a key rather than a Safe), a threshold below 2, fewer owners than the threshold, or any module enabled.
   - The Safe then executes a harmless admin transaction (re-setting `maxPriceAge` to its current value).
   - `STEP=renounce` removes the key's admin role. It refuses until the Safe's nonce shows it has executed a transaction since the grant, so the key is never dropped before the Safe has proven it can act.
 - **After the handover every admin action is a Safe transaction.** `Configure.s.sol` without a key writes a Safe{Wallet} Transaction Builder batch for the owners to decode, sign and execute, and broadcasts nothing.
-- **`script/Verify.s.sol` checks a deployed vault read-only.** It compares the vault's and both libraries' bytecode byte for byte with the audited build, so the compiled-in caps are the ones reviewed. It also checks every immutable and parameter, and the roles for the current phase:
+- **`script/Verify.s.sol` checks a deployed vault read-only.** It compares the vault's and both libraries' runtime bytecode byte for byte with the compiled artifacts of the commit it is run from (masking only library link sites, immutables and each library's own address word), so the logic and compiled-in caps are exactly that commit's. Run it from the commit that was deployed (and, once one exists, the audited tag). It also checks every immutable and parameter, and the roles for the current phase:
   - bootstrap: the deployer holds admin
   - after the handover: the Safe holds admin and the deployer holds nothing
   - in both: the keeper and guardian each hold only their own role
@@ -38,7 +38,7 @@ The vault uses plain `AccessControl`, not `AccessControlEnumerable`. Current rol
 
 ## DEFAULT_ADMIN_ROLE
 
-Held by the admin Safe (2 of 3).
+Intended holder: the admin Safe (2 of 3). At launch it is held by the deployer's bootstrap key until the handover described above.
 
 | Function | Effect | Bound enforced in bytecode |
 |---|---|---|
@@ -68,7 +68,7 @@ Held by the keeper's hot EOA.
 
 | Function | Effect | Checked on chain |
 |---|---|---|
-| `rollOpen(uint256 optionId, uint112 contracts)` | Writes the cycle's calls into Valorem and moves to `Listed` | Phase, halt, registry writing window, approved rung in the current cycle, cycle window and 21-day tenor, Valorem fee gate, oracle pause, price staleness, strike inside the OTM band, contract count within `maxContractsCap` and `maxUtilizationBps` of idle assets, option asset, lot size and window matching the cycle. See [Architecture](architecture.md#transitions). |
+| `rollOpen(uint256 optionId, uint112 contracts)` | Writes the cycle's calls into Valorem and moves to `Listed` | Phase, halt, registry writing window, approved rung in the current cycle, cycle window and 21-day tenor, Valorem fee gate, oracle pause, price staleness, strike inside the OTM band, contract count within `maxContractsCap` and `maxUtilizationBps` of idle assets, option asset, lot size (matching the cycle and exactly one token) and window matching the cycle. See [Architecture](architecture.md#transitions). |
 | `approveListing(OrderComponents)` | Authorises one Seaport order by hash: `seaport.validate` plus `listingHash` for EIP-1271 | See the list below |
 | `cancelListing(OrderComponents)` | Cancels the recorded order on Seaport | The components must hash to `listingHash`. Also callable by the guardian. |
 | `invalidateAllListings()` | Bumps the vault's Seaport counter, killing every outstanding order | Also callable by the guardian |
@@ -122,7 +122,7 @@ Held by a separate 1-of-1 hardware key. It is an emergency brake that one person
 - Change any parameter, grant or revoke roles, or touch the fee recipient.
 - Move a token. None of its three functions reaches a transfer or approval; it changes one boolean and Seaport's order state.
 
-At worst, a compromised guardian keeps writes halted, or keeps killing listings until the three-listing budget for a cycle is spent. The result is weeks with no premium until the admin Safe revokes the role and unhalts. Exits keep working throughout.
+At worst, a compromised guardian keeps writes halted, or keeps killing listings until the three-listing budget for a cycle is spent. The result is weeks with no premium until the admin revokes the role and unhalts. Exits keep working throughout.
 
 ## Permissionless functions
 
@@ -140,9 +140,9 @@ At worst, a compromised guardian keeps writes halted, or keeps killing listings 
 
 Because `lockBook` and `rollClose` are permissionless, settlement and the redeem queue do not depend on the keeper or the guardian staying alive.
 
-## Worst case: a compromised admin Safe
+## Worst case: a compromised admin
 
-The admin trust assumption covers fees and parameters, not custody. Stated plainly, an attacker holding 2 of the 3 admin signers can do the following, with no timelock:
+The admin trust assumption covers fees and parameters, not custody. Stated plainly, an attacker who controls the admin role (the deployer key until the handover, or 2 of the 3 Safe signers after it) can do the following, with no timelock:
 
 - **Take up to 20% of fee-bearing USDG from then on.** They can raise `protocolFeeBps` to the 2000 ceiling and point `feeRecipient` at their own address. The redirect also covers any `pendingFeeUsdg` accrued but not yet paid. The fee base is premium, plus any USDG sent to the vault directly. Strike proceeds from assignment are excluded by code (`_accrueHarvest` subtracts the measured claim redemption), so the ceiling limits a cut of premium, not of the collateral assigned depositors sold at the strike.
 - **Loosen the policy to its compiled-in limits and run the roll themselves.** They can grant `KEEPER_ROLE` to an address they control, then set `minOtmBps` to 100 (strikes 1% above spot), `minPremiumBps` to 10 (a gross premium floor of 0.10% of spot notional), `maxUtilizationBps` to 10000, and any non-zero contract cap. They can then write and list on those terms with a buyer they control ready to fill. Every write and listing still passes the checks in [KEEPER_ROLE](#keeper_role), so this moves option value to the buyer rather than moving tokens out of the vault, but it is a real economic loss to depositors.

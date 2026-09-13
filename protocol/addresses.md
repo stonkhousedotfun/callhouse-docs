@@ -28,7 +28,7 @@ Filled in at deployment. Every row is empty today.
 | Vault (`cNVDA` shares) | not deployed | Holds the collateral, is the Valorem writer and the Seaport offerer |
 | `SeaportOrderLib` | not deployed | Linked public library |
 | `ValoremLib` | not deployed | Linked public library |
-| Admin Safe (2 of 3) | not deployed | Holds `DEFAULT_ADMIN_ROLE` |
+| Admin (bootstrap key, then Admin Safe 2 of 3) | not deployed | Holds `DEFAULT_ADMIN_ROLE`. At launch this is the deployer's own key; it moves to the 2-of-3 Admin Safe through `script/HandoverAdmin.s.sol`. See [Roles and admin powers](roles.md). |
 | Fee Safe | not deployed | Receives the protocol fee; holds no role |
 
 The keeper and guardian addresses can be checked with `hasRole` once published. Role identifiers are on [Roles and admin powers](roles.md).
@@ -39,7 +39,7 @@ These contracts are not Callhouse's. Callhouse does not control, upgrade or audi
 
 | Contract | Address | What it is |
 |---|---|---|
-| Valorem Clear | [`0x9a7b40e5c1dB1Af822ef091c990b58b02C78C0C0`](https://robinhoodchain.blockscout.com/address/0x9a7b40e5c1dB1Af822ef091c990b58b02C78C0C0) | `ValoremOptionsClearinghouse`. Its runtime bytecode matches upstream `valorem-core` at commit `6436c823` apart from the metadata trailer (`ops/recon/R4-valorem-abi.md`). Holds written collateral, mints the option ERC-1155 and the claim NFT, and settles exercise and redemption. It has a 15 bps notional engine fee that is currently switched off. |
+| Valorem Clear | [`0x9a7b40e5c1dB1Af822ef091c990b58b02C78C0C0`](https://robinhoodchain.blockscout.com/address/0x9a7b40e5c1dB1Af822ef091c990b58b02C78C0C0) | `ValoremOptionsClearinghouse`. Its runtime bytecode matches upstream `valorem-labs-inc/clear` (formerly `valorem-core`) at commit `6436c823` apart from the metadata trailer (`ops/recon/R4-valorem-abi.md`). Holds written collateral, mints the option ERC-1155 and the claim NFT, and settles exercise and redemption. It has a 15 bps notional engine fee that is currently switched off. |
 | Seaport 1.6 | [`0x0000000000000068F116a894984e2DB1123eB395`](https://robinhoodchain.blockscout.com/address/0x0000000000000068F116a894984e2DB1123eB395) | Canonical Seaport deployment (`information()` reports version `1.6`). The vault lists option tokens here as offerer. |
 | USDG | [`0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`](https://robinhoodchain.blockscout.com/address/0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168) | The premium and strike currency, 6 decimals, behind a proxy. |
 | NVDA Stock Token | [`0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC`](https://robinhoodchain.blockscout.com/address/0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC) | The vault's underlying asset and Valorem's `underlyingAsset`. 18 decimals, beacon proxy. Exposes `oraclePaused()` (checked before writes) and `uiMultiplier()` (display only). |
@@ -48,7 +48,7 @@ These contracts are not Callhouse's. Callhouse does not control, upgrade or audi
 | Chainlink RHNVDA/USD | [`0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15`](https://robinhoodchain.blockscout.com/address/0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15) | Chainlink `AggregatorProxy`, description `RHNVDA / USD`, 8 decimals, market hours `us_equities_24/5`. The vault's spot source for the write gates and the UI. Never read during settlement. |
 
 {% hint style="warning" %}
-**The JUGGERNAUT registry is not Callhouse's.** Overcall's frontend config for chain 4663 has a top-level `registry` key set to `0x65dD407955912Be814f723724cE60f91ebd72616`. That is the OvercallRegistry for the **JUGGERNAUT** market, not NVDA. It has the same bytecode and answers the same getters, but its `collateralToken` is a different token. The Callhouse vault's constructor reverts `RegistryAssetMismatch` for any registry whose collateral, exercise token or clearinghouse do not match. The deploy script repeats that check before broadcasting.
+**The JUGGERNAUT registry is not Callhouse's.** Overcall's frontend config for chain 4663 has a top-level `registry` key set to `0x65dD407955912Be814f723724cE60f91ebd72616`. That is the OvercallRegistry for the **JUGGERNAUT** market, not NVDA. It is the same 5,905-byte contract and answers the same getters, but its immutable `collateralToken` is a different token. The Callhouse vault's constructor reverts `RegistryAssetMismatch` for any registry whose collateral, exercise token or clearinghouse do not match. The deploy script repeats that check before broadcasting.
 {% endhint %}
 
 The NVDA registry, and every other Overcall registry on this chain, is owned by the single EOA `0x408adcFFebDF48EC23F1E3811A91AeD3cC951CC0`. That owner sets the weekly cycle but holds no funds (`ops/recon/R1-overcall-registry.md` §6).
@@ -68,7 +68,7 @@ cast call $VAULT "priceFeed()(address)"            --rpc-url $RH_RPC   # 0x379EC
 cast call $VAULT "overcallFeeRecipient()(address)" --rpc-url $RH_RPC   # 0xdAe7e82A2E7D566C67E87C164B05a1C560190782
 cast call $VAULT "feeRecipient()(address)"         --rpc-url $RH_RPC   # the fee Safe listed above
 cast call $VAULT "hasRole(bytes32,address)(bool)" \
-  0x0000000000000000000000000000000000000000000000000000000000000000 $SAFE_ADMIN --rpc-url $RH_RPC   # true
+  0x0000000000000000000000000000000000000000000000000000000000000000 $SAFE_ADMIN --rpc-url $RH_RPC   # true after the handover; during bootstrap the deployer key holds admin instead
 ```
 
 The full post-deploy check is `script/Verify.s.sol` in the `callhouse-contracts` repository.

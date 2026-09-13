@@ -3,7 +3,7 @@
 Premium and strike proceeds reach you as USDG, tracked per share and claimed separately from your cNVDA. The cNVDA share price is a pure NVDA number. If your claimable USDG does not move, no premium reached you.
 
 {% hint style="warning" %}
-Premium is paid only if a buyer fills. A week with no buyer adds nothing to your claimable USDG, and that is shown as zero rather than hidden.
+Premium is paid only if a buyer fills. A week with no buyer adds no premium to your claimable USDG, and that is shown as zero rather than hidden. The vault's collateral can still be assigned that week (see [Assignment](../product/assignment.md)). If it is, the strike USDG for the NVDA that was taken is credited to your claimable balance at `rollClose`, with no fee.
 {% endhint %}
 
 ## What becomes claimable
@@ -12,7 +12,7 @@ Premium is paid only if a buyer fills. A week with no buyer adds nothing to your
 |---|---|
 | Premium from a filled listing | The 95% of gross premium the vault receives after Overcall's 5%, less the 5% Callhouse protocol fee on that amount |
 | Strike proceeds from assignment | All of it. No protocol fee is charged on strike proceeds. |
-| An unfilled week | Nothing, and nothing is charged |
+| An unfilled week | No premium, and no fee is charged. If any of the vault's contracts were still assigned that week, the strike proceeds are credited in full, as in the row above. |
 
 The amounts are split across all cNVDA shares pro rata. USDG has 6 decimals. See [Fees](../product/fees.md) for the arithmetic.
 
@@ -29,8 +29,8 @@ USDG is not reinvested into NVDA. It waits for you to claim it.
 
 ## Step by step
 
-1. Open the NVDA vault at `app.callhouse.xyz` and connect your wallet.
-2. The USDG card shows your claimable balance. This is the vault's own `claimableUsdg` figure, not an estimate.
+1. Open the NVDA vault at `app.callhouse.finance` and connect your wallet.
+2. The USDG card shows your claimable balance. This is the vault's own `claimableUsdg` figure read from the chain, not a projection. Because of index rounding it can be a base unit or so above what the claim actually pays (see below).
 3. Choose "Claim". This calls `claimUsdg()` and sends the full claimable amount to your wallet. The contract also has `claimUsdgTo(address)` if you want it sent to a different address.
 
 You can claim at any time, in any phase. The contracts set no deadline.
@@ -40,7 +40,7 @@ You can claim at any time, in any phase. The contracts set no deadline.
 | Cause | What you see |
 |---|---|
 | Nothing is claimable | `NothingToClaim` |
-| A problem on USDG's side, such as a paused USDG contract or a blocklisted receiving address | The USDG transfer reverts |
+| A problem on USDG's side, such as a paused USDG contract or a receiving address frozen by USDG | The USDG transfer reverts |
 
 Claims are **not** blocked by:
 

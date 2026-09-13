@@ -24,7 +24,7 @@ The app shows "instant path open" or "queue only" based on the vault's `canRedee
 
 ### Step by step
 
-1. Open the NVDA vault at `app.callhouse.xyz` and connect your wallet.
+1. Open the NVDA vault at `app.callhouse.finance` and connect your wallet.
 2. Enter the number of cNVDA shares to redeem. The app shows "Redeem now" when the instant path is open.
 3. Confirm. Your shares burn and NVDA is sent to you in the same transaction.
 
@@ -53,7 +53,7 @@ A halt on writes never blocks instant redemption. Halting stops new calls from b
 ### What you receive
 
 * **NVDA:** your share of the vault's idle NVDA at settlement, pro rata to the shares you queued.
-* **USDG:** exactly what your own escrowed shares earned between the moment you queued and settlement. Escrowed shares keep earning right up to settlement. On an assigned week this includes their share of the strike proceeds, so the payout is a mix of NVDA and USDG. Someone who queues after you cannot take a share of what your shares earned before they joined.
+* **USDG:** what your own escrowed shares earned between the moment you queued and settlement, rounded down and capped at what the epoch still holds. Whoever collects last from an epoch takes whatever USDG it has left instead, so a payout can differ from its own earnings, usually by a few base units of rounding. Escrowed shares keep earning right up to settlement. On an assigned week this includes their share of the strike proceeds, so the payout is a mix of NVDA and USDG. Someone who queues after you cannot take a share of what your shares earned before they joined.
 
 USDG already credited to your shares *before* you queued is not part of the queue payout. It stays with you when you queue and remains claimable through [Claiming USDG](claiming-usdg.md). If you queue, check both places.
 
@@ -63,8 +63,10 @@ Once an epoch is settled, your amounts are fixed. You are not diluted by later d
 
 A queued redemption settles at the `rollClose` of the cycle that is open when you queue. The keeper can call `rollClose` from expiry, and anyone can call it one hour after expiry, so a stopped keeper cannot hold the queue past the week. Under Overcall's current window, expiry is Saturday 20:00 UTC, but the registry's timestamps are what count.
 
+A frozen token can hold the queue up. `rollClose` redeems the Valorem claim, so an issuer freeze on the Stock Token, or USDG freezing the vault's address on a week with strike proceeds to receive, can stop the week closing and the queue settling until it lifts. A halt on writes, a stale price feed or a paused Stock Token oracle does not.
+
 {% hint style="warning" %}
-**Do not queue while the vault is Idle.** The queue is never blocked by the phase, so the transaction will succeed, but a queued redemption only settles at the next `rollClose`. That needs a call to be written first, which may not happen for a week or more. While the vault is Idle, use instant redemption instead.
+**Do not queue while the vault is Idle.** The queue is never blocked by the phase, so the transaction will succeed, but a queued redemption only settles at the next `rollClose`. That needs a call to be written first, which may not happen for a week or more. Anything that stops the next write keeps your shares in escrow for as long as it lasts: a halt nobody lifts, a stale or paused price feed, Valorem's engine fee switched on and not accepted, a registry cycle the vault refuses, or less than one whole NVDA idle to write against. Meanwhile your escrowed shares still count in the share supply, so when the next call is written your NVDA is written against with everyone else's and is exposed to that week's assignment. While the vault is Idle, use instant redemption instead.
 
 **A queued redemption cannot be cancelled.** There is no function to take escrowed shares back.
 {% endhint %}
@@ -74,13 +76,13 @@ A queued redemption settles at the `rollClose` of the cycle that is open when yo
 | Step | Blocked by | Not blocked by |
 |---|---|---|
 | `queueRedeem` | Queueing more shares than you hold (`InsufficientFreeShares`) | The phase, a halt on writes, or an issuer freeze |
-| `completeRedeem` | The epoch has not settled yet (`EpochNotSettled`); nothing queued (`NothingQueued`); an issuer freeze on the Stock Token, because the NVDA transfer reverts | A halt on writes |
+| `completeRedeem` | The epoch has not settled yet (`EpochNotSettled`); nothing queued (`NothingQueued`); an issuer freeze on the Stock Token, because the NVDA transfer reverts; a paused USDG or a receiver frozen by USDG, but only when the payout includes USDG, because the USDG transfer reverts | A halt on writes |
 
-You have one queue slot per account. If you queue again after an earlier epoch has settled but before you completed it, the earlier amounts are moved into your owed balance automatically. No tokens move at that point, which is why queueing still works during an issuer freeze. `completeRedeem` then pays everything you are owed at once.
+You have one queue slot per account. If you queue again after an earlier epoch has settled but before you completed it, the earlier amounts are moved into your owed balance automatically. No tokens move at that point, which is why queueing still works during an issuer freeze. `completeRedeem` pays everything you are owed at once, and it can be called for the earlier amounts even while your new entry is still waiting. The app only shows "Complete redemption" once your newest entry has settled, so to collect the earlier amounts sooner, call `completeRedeem` directly.
 
 ## Why withdrawals queue at all
 
-While a call is open, the NVDA behind it is locked in Valorem until expiry. The vault cannot hand it back early, and it will not quote a price for a position whose outcome depends on whether buyers exercise. The queue is the mechanism, not a discretionary gate. No key can jump it, and no key can stop it.
+While a call is open, the NVDA behind it is locked in Valorem until expiry. The vault cannot hand it back early, and it will not quote a price for a position whose outcome depends on whether buyers exercise. The queue is the mechanism, not a discretionary gate. No Callhouse key can jump it or stop it. The token issuers are outside Callhouse's control: a Stock Token freeze can hold up both the close and the NVDA payout until it lifts, and a USDG freeze on the vault can hold up the close of an assigned week. See [Risks](../product/risks.md).
 
 cNVDA is not listed anywhere, so there is no secondary market to sell into instead.
 

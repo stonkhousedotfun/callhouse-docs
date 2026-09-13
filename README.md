@@ -9,7 +9,7 @@ There is no protocol token, no points programme and no airdrop. What depositors 
 {% hint style="warning" %}
 **Read these before anything else.**
 
-* **Premium is paid only if a buyer fills.** A week with no buyer pays zero.
+* **Premium is paid only if a buyer fills.** A week with no buyer pays zero premium, and the vault's collateral can still be assigned that week, because Valorem assigns exercises across every writer of the same option series, not only to writers whose calls were sold.
 * **Assignment can take the collateral at the strike.** The upside above the strike is given up for that week, and v1 does not buy the stock back.
 * **Stock Tokens are debt securities.** They are issued by Robinhood Assets (Jersey) Limited. They are not Nvidia shares, they carry no vote, and the issuer can freeze transfers.
 * **Callhouse is not available to US persons.** The same perimeter applies as to the Stock Tokens themselves.
@@ -19,7 +19,7 @@ There is no protocol token, no points programme and no airdrop. What depositors 
 ## Status
 
 {% hint style="danger" %}
-**The Callhouse contracts are not deployed and have not been audited.** An internal adversarial review has been run and its findings fixed, but that is a review by the people who wrote the code, not an external audit. The vault address will be published on [Contracts and addresses](protocol/addresses.md) after deployment. Until it appears there, no address is the Callhouse vault.
+**The Callhouse contracts are not deployed and have not been audited.** An internal adversarial review has been run and the contract defects recorded from it have been fixed, but that is a review by the people who wrote the code, not an external audit. The vault address will be published on [Contracts and addresses](protocol/addresses.md) after deployment. Until it appears there, no address is the Callhouse vault.
 {% endhint %}
 
 These docs describe the contracts as written. They contain no performance figures, because there are none yet. Once the vault runs, every closed week, including the weeks that paid nothing, is published in the app.
@@ -28,9 +28,11 @@ These docs describe the contracts as written. They contain no performance figure
 
 | Where | What it is |
 |---|---|
-| `callhouse.xyz` | The public site. It explains the product and never asks for a wallet. |
-| `app.callhouse.xyz` | The app. Depositing, withdrawing, claiming USDG and each week's listing live here. |
+| `callhouse.finance` | The public site. It explains the product and never asks for a wallet. It is live, and carries the Terms of Use (`/terms`), the privacy notice (`/privacy`), the perimeter disclosure and vulnerability reporting (`/legal`), and `/.well-known/security.txt`. |
+| `app.callhouse.finance` | The app. Depositing, withdrawing, claiming USDG and each week's listing will live here. It is not deployed yet. |
 | These docs | Depositor documentation and the protocol reference. |
+
+Security reports go to **security@callhouse.finance**. See [Security and audits](protocol/security.md#reporting-a-vulnerability). `callhouse.xyz` is not a Callhouse domain.
 
 ## Where to go next
 

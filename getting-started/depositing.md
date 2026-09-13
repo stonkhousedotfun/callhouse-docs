@@ -14,11 +14,11 @@ The vault is not deployed yet. The steps below describe how depositing works onc
 
 * NVDA Stock Tokens on Robinhood Chain (chain id 4663), and eligibility to hold them under the issuer's own terms.
 * ETH on Robinhood Chain for gas.
-* A wallet connected to `app.callhouse.xyz`.
+* A wallet connected to `app.callhouse.finance`.
 
 ## Step by step
 
-1. Open the NVDA vault at `app.callhouse.xyz` and connect your wallet. Switch to Robinhood Chain (4663) if asked.
+1. Open the NVDA vault at `app.callhouse.finance` and connect your wallet. Switch to Robinhood Chain (4663) if asked.
 2. Enter the amount of NVDA to deposit. The form shows how much room is left under the deposit cap and how many cNVDA the amount buys at the current share price. It does not quote a return.
 3. **Approve.** The vault needs permission to move your NVDA. The app asks for an approval of exactly the amount you are depositing, not an unlimited one.
 4. **Deposit.** Confirm the deposit transaction. The vault pulls your NVDA and mints cNVDA to you in the same transaction.
@@ -27,7 +27,7 @@ The vault is not deployed yet. The steps below describe how depositing works onc
 
 You receive cNVDA shares. cNVDA is an ERC-20 token with 18 decimals, the same as the Stock Token.
 
-The number of shares is your deposit divided by the vault's current NVDA per share, rounded down. At launch one share is one NVDA. After that, the share price moves only when the vault's NVDA balance changes, for example after an assignment. Rounding always favours the vault, so you can never round your way to more than you put in.
+The number of shares is your deposit divided by the vault's current NVDA per share, rounded down. At launch one share is one NVDA. After that, deposits and redemptions leave the share price unchanged, apart from rounding; it falls when NVDA leaves without shares being burned, as in an assignment. Rounding always favours the vault, so you can never round your way to more than you put in.
 
 The share price counts the vault's idle NVDA plus NVDA still locked in this week's Valorem claim. It does not include USDG. Premium is tracked separately; see [Claiming USDG](claiming-usdg.md).
 
@@ -61,7 +61,7 @@ Deposits reopen when `rollClose` returns the vault to Idle. The app's "max" figu
 
 The cap is measured against the NVDA the vault is responsible for: idle NVDA, plus NVDA locked in this week's call, minus NVDA already set aside for settled redemptions. Writing a call does not free up room under it.
 
-A halt on writes does **not** block deposits, and neither does a stale or paused price feed. Those stop the vault from writing new calls, not from accepting NVDA.
+A halt on writes does **not** block deposits, and neither does a stale or paused price feed. Those stop the vault from writing new calls and authorising new listings, not from accepting NVDA.
 
 ## Why deposits close at the exercise timestamp
 
