@@ -29,6 +29,12 @@ Anyone holding the option the vault wrote (the same strike and cycle) can exerci
 
 **Costs you:** all upside above the strike for that week, and the NVDA itself. v1 does not buy it back, so the vault ends the week underweight NVDA and the share price in NVDA terms falls. If NVDA gaps up and keeps going, you sold the move for a week's premium. See [Assignment](assignment.md).
 
+### Depositing into an open week
+
+Deposits stay open while a call is live, until the exercise timestamp. The share price counts the NVDA locked behind the call at face value and does not subtract what the call could cost, and every share carries the week's result.
+
+**Costs you:** if you deposit while NVDA is above the strike, you pay full price for shares whose collateral may be assigned at the strike, and your shares take their pro rata part of that loss. Deposits made while the vault is Idle are not exposed this way. Deposits close at the exercise timestamp, and as soon as any contract is assigned.
+
 ### Partial assignment
 
 Valorem assigns by bucket, not perfectly pro rata, so part of the vault's position can be assigned and part not. Assignment is spread across everyone who wrote the same option, whether or not their own tokens were sold, so the vault's exposure is every contract it wrote, while its premium comes only from the contracts it sold.

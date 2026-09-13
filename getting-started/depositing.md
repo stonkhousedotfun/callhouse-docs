@@ -33,9 +33,13 @@ The share price counts the vault's idle NVDA plus NVDA still locked in this week
 
 ## What your deposit does during an open week
 
-* **It is not added to a call that is already written.** New NVDA lands in the vault's idle balance and waits for the next cycle's write.
+* **Your NVDA is not written that week.** New NVDA lands in the vault's idle balance and waits for the next cycle's write.
+* **Your shares still carry that week's result.** cNVDA is pooled. From the moment your shares are minted you share pro rata in whatever the rest of the week brings: premium from fills after your deposit, and the effect of any assignment, which is a lower NVDA share price plus a share of the strike USDG.
 * **It does not share premium earned before you arrived.** Before minting your shares, the deposit folds any premium that has already reached the vault into the per-share USDG index. Your shares start from that point.
-* **Your shares are pooled.** Once you hold cNVDA, you share pro rata in whatever the rest of the week brings. That includes premium from fills after your deposit, and the effect of any assignment: a lower NVDA share price plus a share of the strike USDG.
+
+{% hint style="warning" %}
+**A deposit while a call is open is priced at face value.** The share price counts the NVDA locked behind this week's call at full value and does not subtract what the open call could cost. If NVDA is already above the strike when you deposit, you pay full price for shares whose collateral may leave at the strike, and part of that loss is yours. Depositing while the vault is Idle avoids this.
+{% endhint %}
 
 ## When deposits are open
 
@@ -44,6 +48,7 @@ The share price counts the vault's idle NVDA plus NVDA still locked in this week
 | Idle | Open, up to the cap |
 | Listed, before the exercise timestamp | Open, up to the cap |
 | Listed, at or after the exercise timestamp | Closed (`DepositsClosedForCycle`) |
+| Listed, after any contract has been assigned | Closed (`DepositsClosedForCycle`), whatever the clock says |
 | Exercisable | Closed |
 | Settling | Closed. This phase starts and ends inside a single `rollClose` transaction. |
 

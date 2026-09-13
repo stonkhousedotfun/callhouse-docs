@@ -44,7 +44,7 @@ A listing is refused if its gross price, before Overcall's 5%, is below 0.40% of
 
 ### Utilisation: 95% of idle NVDA
 
-The vault writes at most 95% of its idle NVDA, rounded down to whole contracts. With 20 NVDA idle, that is at most 19 contracts. At least part of the idle balance is never written, and NVDA deposited after the write is not added to that week's call. The ceiling is 100%.
+The vault writes at most 95% of its idle NVDA, rounded down to whole contracts. With 20 NVDA idle, that is at most 19 contracts. At least part of the idle balance is never written, and NVDA deposited after the write is not added to that week's call (its shares still share that week's result pro rata; see [Depositing](../getting-started/depositing.md)). The ceiling is 100%.
 
 ### Protocol fee: 5% of premium
 
