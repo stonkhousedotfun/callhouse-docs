@@ -30,7 +30,7 @@ These docs describe the contracts as written. They contain no performance figure
 |---|---|
 | `callhouse.finance` | The public site. It explains the product and never asks for a wallet. It is live, and carries the Terms of Use (`/terms`), the privacy notice (`/privacy`), the perimeter disclosure and vulnerability reporting (`/legal`), and `/.well-known/security.txt`. |
 | `app.callhouse.finance` | The app. Depositing, withdrawing, claiming USDG and each week's listing will live here. It is not deployed yet. |
-| These docs | Depositor documentation and the protocol reference. |
+| `docs.callhouse.finance` | These docs: depositor documentation and the protocol reference. |
 
 Security reports go to **security@callhouse.finance**. See [Security and audits](protocol/security.md#reporting-a-vulnerability). `callhouse.xyz` is not a Callhouse domain.
 
