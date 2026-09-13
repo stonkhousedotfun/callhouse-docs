@@ -121,7 +121,7 @@ According to `docs/AUDIT-SCOPE.md` §6, this evidence does **not** prove the fol
 
 From `SECURITY.md` §5:
 
-1. **EIP-1271 against Overcall's live validator.** One real 1-contract listing is planned before launch. `SECURITY.md` names the self-hosted fill page as the fallback, but as built that page reads only Overcall's book, so it has nothing to fill if Overcall rejects the listing. The keeper's own `/orders` fallback is not yet wired into the app (`docs/WIRING.md` §7 in the app repository).
+1. **EIP-1271 against Overcall's live validator.** One real 1-contract listing is planned before launch. If Overcall rejects the listing, the fallback is the app's cycle page, which serves the keeper's signed order after checking it against the chain (`docs/WIRING.md` §7 in the app repository). That path passed the fork acceptance test, including a tampered order that it refused, but it has not run against the live chain.
 2. **Keeper pricing at exactly the policy floor.** An upward price tick between the keeper's read and `approveListing` reverts `PremiumBelowMinimum`. It self-heals on the next attempt. The keeper now has an optional `PREMIUM_MARGIN_BPS` setting (0 to 1000 bps above the floor) that absorbs such a tick at the cost of a higher ask. Its default is 0, which still prices at the floor, and which value to run with is undecided.
 3. **Gas cost of the deposit-time harvest checkpoint.** To be measured on the first live week.
 

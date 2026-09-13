@@ -55,7 +55,7 @@ The contracts set the bounds. Inside them, the keeper software (`keeper/src/poli
 * **Listing length:** until the exercise timestamp.
 * **Relisting:** after a cancel or an invalidated order, the keeper relists once by default, never below its previous ask. The vault's limit of three signed listings a cycle applies regardless.
 
-If Overcall's book does not show the listing, the keeper keeps the signed order and serves it from its own `/orders` endpoint. The app is not yet wired to read it: its cycle page fills only orders that appear on Overcall's book, so as built, a listing Overcall rejects or drops is an unfilled week.
+If Overcall's book does not show the listing, the keeper keeps the signed order and serves it from its own `/orders` endpoint. When Overcall's book does not show the vault's live listing, the app's cycle page falls back to the keeper: it fetches the keeper's signed order, checks it against the chain (Seaport's counter and order hash must match the listing the vault authorised, every leg must pay the vault and Overcall's 5%, and the order must not be cancelled or sold out), and offers a fill from the page, labelled as the keeper's listing. The order is still invisible to buyers who only use Overcall.
 
 ### Listed → Exercisable: `lockBook`
 

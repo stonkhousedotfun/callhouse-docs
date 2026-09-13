@@ -21,7 +21,7 @@ The vault writes and lists a call, and nobody buys it before the book closes. Th
 
 **Costs you:** the week's premium, which is zero, and the time. No fee is charged on a week that collected nothing. There is no dealer obliged to take the other side, and no protocol token or emission to top up an empty week. An unsold week is not automatically a safe week: if other writers' contracts on the same strike were bought and exercised, Valorem can assign part of the exercise to the vault's claim even though the vault sold nothing (see below).
 
-**What the system does:** publishes the week alongside the filled ones with premium 0: status `unfilled`, or `assigned` if Valorem assigned part of the vault's claim anyway. If Overcall's listings API rejects the order, the app cannot offer it either: its cycle page fills only orders that appear on Overcall's book. A fallback that serves the signed order from the keeper has been built but is not yet wired into the app, so as built, a rejected order means an unfilled week.
+**What the system does:** publishes the week alongside the filled ones with premium 0: status `unfilled`, or `assigned` if Valorem assigned part of the vault's claim anyway. If Overcall's listings API rejects or drops the order, the app's cycle page falls back to the keeper: it fetches the keeper's signed order, checks it against the chain (Seaport's counter and order hash must match the listing the vault authorised, every leg must pay the vault and Overcall's 5%, and the order must not be cancelled or sold out), and offers a fill from the page, labelled as the keeper's listing. Buyers who only browse Overcall will not see it there, so a rejected order still makes an unfilled week more likely.
 
 ### Assignment caps your upside
 
@@ -120,7 +120,7 @@ Callhouse sits on contracts and services it does not control, and none of them c
 | Dependency | What it does | What can go wrong |
 |---|---|---|
 | **Overcall registry** | Publishes the weekly cycle, strikes and deadlines for the NVDA market | It is controlled by a single third-party key. The vault refuses a malformed cycle: over 21 days, a lot size other than one token, or options that do not match the cycle. Those failures cost a skipped week. The vault does not second-guess strikes that sit inside its policy band. |
-| **Overcall listings API** | Shows the vault's listing to buyers on Overcall | It can reject or drop an order. An invisible listing is an unfilled week. The app's fill page reads only Overcall's book, so it cannot serve an order Overcall rejected or dropped. The keeper keeps the signed order for that case, but that fallback is not yet wired into the app. |
+| **Overcall listings API** | Shows the vault's listing to buyers on Overcall | It can reject or drop an order. An invisible listing is an unfilled week. The app's cycle page then offers the keeper's signed order instead, after checking it against the chain, but buyers browsing Overcall will not see it. |
 | **Valorem Clear** | Holds the collateral, mints the options, settles assignment | Its engine fee (15 bps of notional, currently off) can be switched on by a third party. The vault then stops writing until the admin accepts the fee. |
 | **Seaport 1.6** | The listing and fill contract | Third-party code outside Callhouse's control |
 | **Robinhood Chain** | The chain the vault runs on | A centralised sequencer. An outage near the book close means no live listing when buyers are looking. |
