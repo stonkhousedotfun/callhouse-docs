@@ -1,0 +1,12 @@
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Callhouse
+  structure:
+    - type: space
+      key: callhouse-docs
+      title: Documentation
+      path: docs
+      default: true
+      content:
+        directory: ./
+        language: en
