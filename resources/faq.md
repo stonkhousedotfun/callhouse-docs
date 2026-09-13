@@ -6,7 +6,7 @@ Not yet. The Callhouse contracts are not deployed and have not been audited. The
 
 ### What does a week pay?
 
-Whatever a buyer actually paid for that week's calls, less fees, and nothing if nobody bought. Premium is paid only if a buyer fills. Callhouse does not publish an APY, an APR or any annualised figure, and these docs contain no projections. Once the vault runs, every closed week is published in the app with the premium the vault received in USDG and the net premium after the protocol fee, including the weeks that paid zero. On an assigned week the strike proceeds are shown separately and left out of every premium figure, because they are your collateral sold at the strike, not premium.
+Whatever a buyer actually paid for that week's calls, less fees, and nothing if nobody bought. Premium is paid only if a buyer fills. Callhouse does not publish an APY, an APR or any annualised figure, and these docs contain no projections. Once the vault runs, every closed week is published in the app with the premium the vault received in USDG and the net premium after the protocol fee, including the weeks that paid zero. On an assigned week the strike proceeds are shown separately and left out of every premium figure, because they are your collateral sold at the strike, not premium. The app also shows each week's net premium per cNVDA and net premium as a share of the collateral, valued at spot at harvest. Both cover that week only, are never annualised, and leave out strike proceeds.
 
 ### What happens in a week nobody buys?
 

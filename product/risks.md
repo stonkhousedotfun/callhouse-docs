@@ -21,7 +21,7 @@ The vault writes and lists a call, and nobody buys it before the book closes. Th
 
 **Costs you:** the week's premium, which is zero, and the time. No fee is charged on a week that collected nothing. There is no dealer obliged to take the other side, and no protocol token or emission to top up an empty week. An unsold week is not automatically a safe week: if other writers' contracts on the same strike were bought and exercised, Valorem can assign part of the exercise to the vault's claim even though the vault sold nothing (see below).
 
-**What the system does:** publishes the week as "unfilled, 0" alongside the filled ones. If Overcall's listings API rejects the order, the app cannot offer it either: its cycle page fills only orders that appear on Overcall's book. A fallback that serves the signed order from the keeper has been built but is not yet wired into the app, so as built, a rejected order means an unfilled week.
+**What the system does:** publishes the week alongside the filled ones with premium 0: status `unfilled`, or `assigned` if Valorem assigned part of the vault's claim anyway. If Overcall's listings API rejects the order, the app cannot offer it either: its cycle page fills only orders that appear on Overcall's book. A fallback that serves the signed order from the keeper has been built but is not yet wired into the app, so as built, a rejected order means an unfilled week.
 
 ### Assignment caps your upside
 

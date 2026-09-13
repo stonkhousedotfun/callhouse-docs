@@ -47,7 +47,7 @@ Buyers can fill a listing in part or in full. Each fill pays USDG to the vault i
 
 ### How the keeper chooses, by default
 
-The contracts set the bounds. Inside them, the keeper software (`keeper/src/policy.ts` and `keeper/src/config.ts` in the app repository) makes these choices with its default settings. They are operating choices, not commitments, and the admin can change them without a contract change.
+The contracts set the bounds. Inside them, the keeper software (`keeper/src/policy.ts` and `keeper/src/config.ts` in the app repository) makes these choices with its default settings. They are operating choices, not commitments, and whoever runs the keeper can change them in its configuration, without a contract change.
 
 * **Strike:** the nearest out-of-the-money rung, meaning the lowest strike inside the band. That is where a weekly call has premium, and it is also the rung most likely to be assigned.
 * **Size:** the largest the policy allows, 95% of idle NVDA in whole tokens, capped at the contract limit. The whole written size goes into one listing.

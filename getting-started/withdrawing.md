@@ -75,7 +75,7 @@ A frozen token can hold the queue up. `rollClose` redeems the Valorem claim, so 
 
 | Step | Blocked by | Not blocked by |
 |---|---|---|
-| `queueRedeem` | Queueing more shares than you hold (`InsufficientFreeShares`) | The phase, a halt on writes, or an issuer freeze |
+| `queueRedeem` | Queueing zero shares (`ZeroShares`) or more shares than you hold (`InsufficientFreeShares`) | The phase, a halt on writes, or an issuer freeze |
 | `completeRedeem` | The epoch has not settled yet (`EpochNotSettled`); nothing queued (`NothingQueued`); an issuer freeze on the Stock Token, because the NVDA transfer reverts; a paused USDG or a receiver frozen by USDG, but only when the payout includes USDG, because the USDG transfer reverts | A halt on writes |
 
 You have one queue slot per account. If you queue again after an earlier epoch has settled but before you completed it, the earlier amounts are moved into your owed balance automatically. No tokens move at that point, which is why queueing still works during an issuer freeze. `completeRedeem` pays everything you are owed at once, and it can be called for the earlier amounts even while your new entry is still waiting. The app only shows "Complete redemption" once your newest entry has settled, so to collect the earlier amounts sooner, call `completeRedeem` directly.

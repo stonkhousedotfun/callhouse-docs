@@ -106,15 +106,15 @@ Everything here was run locally by the team. The GitHub Actions account currentl
   - Cycle 1: filled.
   - Cycle 2: rolled while the keeper was down, then unfilled.
   - Cycle 3: filled, with a queued redemption and 9 of 23 contracts assigned on the real clearinghouse.
+- **Keeper extended fork harness (K-22).** On the same kind of fork, against real Seaport and the real Valorem Clear: partial fills of 7/28, 6/21 and 5/15; a guardian `cancelListing` and an `invalidateAllListings`, each followed by a relist, ending in `TooManyListings(3, 3)`; three exercise transactions by two buyers with 13 contracts assigned; a role-less `rollClose` that fails until exactly expiry + 3600 and then succeeds; and the Valorem fee switched on, then accepted (`keeper/DRYRUN.md`, K-22).
 
-  It was re-run and passed after the fee change on 2026-09-13 (`keeper/DRYRUN.md` in the app repository; `docs/AUDIT-SCOPE.md` §6). The registry and feed were mocks seeded with live data, Overcall's API was a stub, and token balances were written into storage. Assignment involved a single exerciser and a single writer, so Valorem's bucketed assignment was not meaningfully exercised.
+  It was re-run and passed after the fee change on 2026-09-13 (`keeper/DRYRUN.md` in the app repository; `docs/AUDIT-SCOPE.md` §6). The registry and feed were mocks seeded with live data, Overcall's API was a stub, and token balances were written into storage. The vault was the only writer of each series, so Valorem's bucketed assignment across writers was not exercised.
 - **Deploy rehearsal.** The full deploy, verify, Safe-configure and admin-handover flow (bootstrap key to Safe) passed on an anvil fork with real Safes on 2026-09-13 (`docs/DEPLOY.md`, "Rehearsal record").
 
 According to `docs/AUDIT-SCOPE.md` §6, this evidence does **not** prove the following:
 
 - **Overcall's production validator** has never accepted the vault's EIP-1271 listing.
-- **Assignment against the real clearinghouse** has run only once, in the dry run. Every other assignment test uses a mock that does not model Valorem's bucketed assignment.
-- **Real Seaport** has not been used for partial-fill, cancel and re-approve sequences. The mock does not model them.
+- **Assignment against the real clearinghouse** has run only in the dry run and the extended harness, with several exercisers but the vault as the only writer, so Valorem's bucketed assignment across writers is untested. Every other assignment test uses a mock that does not model it.
 - **Distribution and claims** have not run on the live chain outside the dry run.
 
 ## Open questions before launch
