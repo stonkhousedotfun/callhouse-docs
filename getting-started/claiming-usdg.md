@@ -10,14 +10,14 @@ Premium is paid only if a buyer fills. A week with no buyer adds no premium to y
 
 | Source | What reaches depositors |
 |---|---|
-| Premium from a fill | The whole premium the buyer paid reaches the vault. Depositors are credited that amount less the 5% Stonkhouse protocol fee. No other party takes a cut. |
+| Premium from a fill | The whole premium the buyer paid reaches the vault. Depositors are credited that amount less the Stonkhouse protocol fee, currently 5% (`protocolFeeBps` 500). The rate is the one in force when the vault accounts for the USDG, and the admin can change it up to 20%. No other party takes a cut: the Valorem engine fee on Stonkhouse's clearinghouse is switched off. |
 | Strike proceeds from assignment | All of it. No protocol fee is charged on strike proceeds. |
 | A week with no buyer | Nothing, and no fee is charged. |
 | A stranded claim, once redeemed | The strike USDG belonging to shares still held, credited in full when `retryStrandedClaim` succeeds. The part belonging to epochs that settled while the claim was stranded is paid to those redeemers through `completeRedeem` instead. |
 
 The amounts are split across all cNVDA shares pro rata. USDG has 6 decimals. See [Fees](../product/fees.md) for the arithmetic.
 
-In a fork rehearsal, two fills paid 4.280945 USDG of premium. The protocol fee was 0.214047 USDG and 4.066898 USDG was credited to shares. Two contracts were then assigned at a 223 USDG strike, and the 446 USDG of strike proceeds was credited with no fee.
+In the keeper's fork dry run (see [How Stonkhouse works](how-it-works.md#a-week-from-a-fork-rehearsal)), two fills paid 4.280945 USDG of premium. The protocol fee was 0.214047 USDG and 4.066898 USDG was credited to shares. Two contracts were then assigned at a 223 USDG strike, and the 446 USDG of strike proceeds was credited with no fee.
 
 ## How the USDG index works
 
@@ -30,19 +30,19 @@ Each account remembers the index at its last balance change. What it has earned 
 A fill pays USDG into the vault straight away, but it is credited to shareholders when the vault next accounts for it:
 
 * **At `rollClose`**, after expiry. This is the normal case. The close credits both the premium and any strike proceeds.
-* **At a deposit.** Before any deposit mints new shares, the vault credits premium that has already arrived to the existing shares. So if someone deposits after a fill, that premium can become claimable before the week closes.
+* **At a deposit.** Before any deposit (or `mint`) creates new shares, the vault credits premium that has already arrived to the existing shares. So if someone deposits after a fill, that premium can become claimable before the week closes.
 * **At `settleQueue`.** Settling the queue while the vault is Idle first credits any USDG that has arrived since the last close.
 * **At `retryStrandedClaim`**, for the strike USDG of a claim that was stranded.
 
-Until one of those runs, premium sitting in the vault is not in your claimable figure. Strike proceeds are only credited at `rollClose` or `retryStrandedClaim`, because they stay inside the Valorem claim until it is redeemed.
+Until one of those runs, premium sitting in the vault is not in your claimable figure. Claiming does not run it, and the vault has no separate function that does. Strike proceeds are only credited at `rollClose` or `retryStrandedClaim`, because they stay inside the Valorem claim until it is redeemed.
 
 USDG is not reinvested into NVDA. It waits for you to claim it.
 
 ## Step by step
 
-1. Open the NVDA vault at `app.stonkhouse.fun` and connect your wallet.
-2. The USDG card shows your claimable balance. This is the vault's own `claimableUsdg` figure read from the chain, not a projection. Because of index rounding it can be a base unit or so above what the claim actually pays (see below).
-3. Choose "Claim". This calls `claimUsdg()` and sends the full claimable amount to your wallet. The contract also has `claimUsdgTo(address)` if you want it sent to a different address.
+1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect your wallet.
+2. The USDG card shows your claimable balance ("Claimable"). This is the vault's own `claimableUsdg` figure read from the chain, not a projection. Because of index rounding it can be a base unit or so above what the claim actually pays (see below).
+3. Choose "Claim … USDG". This calls `claimUsdg()` and sends the full claimable amount to your wallet. The contract also has `claimUsdgTo(address)` if you want it sent to a different address.
 
 You can claim at any time, in any phase. The contracts set no deadline.
 
@@ -69,7 +69,7 @@ If USDG could not move when you completed a redemption (USDG paused, or the vaul
 
 ## Transfers, redemptions and the queue
 
-* **Transferring cNVDA.** USDG earned up to the moment of a transfer stays with the sender. The receiver starts earning from that point. Shares are ERC-20 tokens and the accrual settles on every transfer, mint and burn.
+* **Transferring cNVDA.** USDG credited to the shares up to the moment of a transfer stays with the sender, and the receiver starts earning from that point. Premium that reached the vault before the transfer but is credited after it (see [When it becomes claimable](#when-it-becomes-claimable)) goes to the receiver. Shares are ERC-20 tokens and the accrual settles on every transfer, mint and burn.
 * **Instant redemption.** Burning your shares does not burn your USDG. Anything already credited stays claimable here.
 * **The redeem queue.** USDG credited before you queued stays claimable here. USDG credited to your escrowed shares while they wait in the queue is paid with the redemption through `completeRedeem`, not through `claimUsdg`.
 

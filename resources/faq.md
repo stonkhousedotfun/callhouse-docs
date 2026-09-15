@@ -2,15 +2,15 @@
 
 ### Is Stonkhouse live? Where is the vault address?
 
-Not yet. The Stonkhouse contracts are not deployed and are unaudited. The public site at `stonkhouse.fun` is live but never asks for a wallet, and the app at `app.stonkhouse.fun` has no vault to show until one is deployed. The vault address will be published on [Contracts and addresses](../protocol/addresses.md) after deployment. Until it appears there, no address is the Stonkhouse vault.
+Yes. The vault has been live on Robinhood Chain since 2026-09-15 at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`, and the app at `app.stonkhouse.fun` uses it. Its on-chain token name is still `Callhouse NVDA` (`cNVDA`), from before the rename. Deposits are capped at 20 NVDA in total, a figure the admin can change. The contracts have had no external audit, and the admin role is one hot key with no timelock. Check every address on [Contracts and addresses](../protocol/addresses.md) and trust no other source.
 
 ### Is it audited?
 
-No. The contracts are unaudited: no external audit firm has reviewed them, and none is planned before launch. The gate is the test suite (unit and invariant tests, plus fork tests against the live chain's state that fill through Seaport 1.6, exercise on the Valorem clearinghouse and freeze the vault on USDG) and an internal review. The internal review of the redesigned contracts reported no Critical, High or Medium finding. Its one Low finding, a contract buyer depositing in the middle of its own fill, has been fixed (see [Depositing](../getting-started/depositing.md#a-deposit-inside-a-fill-is-refused)). It also noted that on Stonkhouse's own clearinghouse the admin key holds Valorem's fee switch (see [What fees do I pay?](#what-fees-do-i-pay)). That review was done by the people who built Stonkhouse. It is not an external audit and should not be read as one. See [Security and audits](../protocol/security.md).
+No. No external audit firm has reviewed the contracts, and none is planned. The gate is the test suite (unit and invariant tests, plus fork tests against the live chain's state that fill through Seaport 1.6, exercise on the Valorem clearinghouse and freeze the vault on USDG) and an internal review. The internal review of the redesigned contracts reported no Critical, High or Medium finding. Its one Low finding, a contract buyer depositing in the middle of its own fill, has been fixed (see [Depositing](../getting-started/depositing.md#a-deposit-inside-a-fill-is-refused)). It also flagged who holds Valorem's fee switch on Stonkhouse's own clearinghouse; as deployed, that is a separate 1-of-1 Safe (see [What fees do I pay?](#what-fees-do-i-pay)). That review was done by the people who built Stonkhouse. It is not an external audit and should not be read as one. See [Security and audits](../protocol/security.md).
 
 ### What does a week pay?
 
-Whatever buyers actually paid for that week's calls, less the protocol fee, and nothing if nobody bought. Premium is paid only if a buyer fills. Stonkhouse does not publish an APY, an APR or any annualised figure, and these docs contain no projections. Once the vault runs, every closed week is published in the app with the premium the vault received in USDG and the net premium after the protocol fee, including the weeks that paid zero. On an assigned week the strike proceeds are shown separately and left out of every premium figure, because they are your collateral sold at the strike, not premium. The app also shows each week's net premium per cNVDA and net premium as a share of the collateral, valued at spot at harvest. Both cover that week only, are never annualised, and leave out strike proceeds.
+Whatever buyers actually paid for that week's calls, less the protocol fee, and nothing if nobody bought. Premium is paid only if a buyer fills. Stonkhouse does not publish an APY, an APR or any annualised figure, and these docs contain no projections. Every closed week is published on the app's Activity page with the premium the vault received in USDG and the net premium after the protocol fee, including the weeks that paid zero. On an assigned week the strike proceeds are shown separately and left out of every premium figure, because they are your collateral sold at the strike, not premium. The app also shows each week's net premium per cNVDA and net premium as a share of the collateral, valued at spot at harvest. Both cover that week only, are never annualised, and leave out strike proceeds.
 
 ### What happens in a week nobody buys?
 
@@ -18,13 +18,13 @@ The premium is zero and no fee is charged. Nothing is written either: the vault 
 
 ### Why was my fill refused?
 
-The vault re-checks every fill at the moment it happens, against the price feed at that moment, and the app's fill page simulates your fill before it enables the button. The usual reasons:
+The vault re-checks every fill at the moment it happens, against the price feed at that moment, and the app's cycle page simulates your fill before it enables the button. The usual reasons:
 
-* **Spot has risen since the order was listed.** If the price per contract is now under the premium floor at live spot, the fill reverts with `PremiumBelowFloorAtFill`, and the keeper cancels and relists at the new floor, within three listings a week. If the rise has taken the strike under the band's lower bound (3% above spot at launch), the fill reverts with `StrikeBelowBand`. No new price fixes that, because the strike belongs to the week's option: that week sells no more calls unless spot falls back.
+* **Spot has risen since the order was listed.** If the price per contract is now under the premium floor at live spot, the fill reverts with `PremiumBelowFloorAtFill`, and the keeper can cancel and relist at a new price, within three listings a week. If the rise has taken the strike under the band's lower bound (3% above spot under the live policy), the fill reverts with `StrikeBelowBand`. No new price fixes that, because the strike belongs to the week's option: that week sells no more calls unless spot falls back.
 * **The sale window has closed.** No fill is accepted from the exercise timestamp (`WriteWindowClosed`), and the order itself ends then.
 * **The size no longer fits.** Capacity is measured again at every fill against the NVDA the vault holds at that moment. If it has shrunk, a large fill can be refused (`ContractsAboveUtilization` or `ContractsAboveCap`). Try fewer contracts.
 * **Sales are stopped.** The guardian has halted writes (`WritesAreHalted`), the Stock Token's oracle is paused (`OraclePaused`), the price feed is older than the vault's limit of four days (`StalePrice`), or Valorem's engine fee has been switched on and not accepted (`ValoremFeeNotAccepted`).
-* **The order is no longer the vault's live order.** It was cancelled, sold out, or replaced by a reprice. The fill page always shows the current one.
+* **The order is no longer the vault's live order.** It was cancelled, sold out, or replaced by a reprice. The cycle page shows only the order that matches the vault's live listing.
 * **Something on your side.** Not enough USDG, no USDG approval to Seaport, USDG paused or your address frozen by USDG, or a receiving account that cannot accept ERC-1155 tokens.
 
 A refused fill reverts as a whole: nothing is written and no USDG moves, though a transaction that is sent and reverts still costs gas. See [Buying calls](../product/buying-calls.md).
@@ -39,9 +39,9 @@ Most likely because the week was assigned. The share price counts only NVDA, and
 
 ### What fees do I pay?
 
-One Stonkhouse fee: 5% of the premium buyers pay. The whole premium reaches the vault, and no other party takes a cut of a fill. The protocol fee is never charged on deposits, on idle NVDA, on strike proceeds, or on a week with no buyer, and it can never exceed 20% of premium. See [Fees](../product/fees.md).
+One Stonkhouse fee: 5% of the premium buyers pay (`protocolFeeBps` 500), which the admin can change. The whole premium reaches the vault, and no other party takes a cut of a fill. The protocol fee is never charged on deposits, on idle NVDA, on strike proceeds, or on a week with no buyer, and it can never exceed 20% of premium. See [Fees](../product/fees.md).
 
-Valorem's clearinghouse also has an engine fee of 15 bps of written notional. It is switched off, and the vault refuses to arm a week or accept a fill while it is on unless the admin has explicitly accepted it. If it were ever on and accepted, every fill would pay 15 bps of the contracts' notional in NVDA from the vault to the clearinghouse, and the vault would raise that fill's floor so the buyer pays at least the fee's value at spot in USDG; exercising would also cost the exercising holder 15 bps of the strike. The launch plan is Stonkhouse's own instance of the clearinghouse, whose fee switch is held by the admin address named when it is deployed. On that instance one key would hold both the switch and the acceptance, with no delay.
+Valorem's clearinghouse also has an engine fee of 15 bps of written notional. It is switched off (`feesEnabled()` is `false`), and the vault refuses to arm a week or accept a fill while it is on unless the admin has explicitly accepted it. If it were ever on and accepted, every fill would pay 15 bps of the contracts' notional in NVDA from the vault to the clearinghouse, and the vault would raise that fill's floor so the buyer pays at least the fee's value at spot in USDG. While it is on, exercising also costs the exercising holder 15 bps of the strike, whether or not the vault accepted it. On Stonkhouse's own clearinghouse the switch is held by a 1-of-1 Safe (`0xff14…CF61`), and the acceptance by the vault admin, a separate hot key. Neither has a delay.
 
 ### Can I withdraw at any time?
 
@@ -53,7 +53,7 @@ No. There is no function to take escrowed shares back. While the vault is Idle w
 
 ### Why was my deposit rejected?
 
-Usually `DepositsClosed`, the one error the vault uses for every closing reason: the week's exercise timestamp has passed, the vault is not Idle or Listed, assignment proceeds are still inside the Valorem claim, a claim is stranded, an issuer burn has left the vault short of what it owes settled redeemers, the share price is below the share-price floor, or a fill already happened earlier in the same transaction. Otherwise the deposit would take the vault past its cap (`DepositCapExceeded`), which is 20 NVDA at deployment, or the Stock Token issuer has stopped the transfer. See [Depositing](../getting-started/depositing.md).
+Usually `DepositsClosed`, the one error the vault uses for every closing reason: the week's exercise timestamp has passed, the vault is not Idle or Listed, assignment proceeds are still inside the Valorem claim, a claim is stranded, an issuer burn has left the vault short of what it owes settled redeemers, the share price is below the share-price floor, or a fill already happened earlier in the same transaction. Otherwise the deposit would take the vault past its cap (`DepositCapExceeded`), which is 20 NVDA today and can be changed by the admin, or the Stock Token issuer has stopped the transfer. See [Depositing](../getting-started/depositing.md).
 
 ### Does my USDG expire?
 
@@ -79,7 +79,7 @@ Anyone, in the end. Only opening a week needs a Stonkhouse role.
 
 ### What if the keeper stops running?
 
-A stopped keeper can cost a skipped week, because only the keeper can arm a week and authorise a listing, but it cannot trap your NVDA. An order already authorised keeps working on the vault's own checks, although the app's fill page gets the order's details from the keeper and cannot offer a fill while it is down. From one hour after expiry anyone can call `rollClose` to redeem the vault's claim, settle the redeem queue and return the vault to Idle, and `lockBook`, `settleQueue` and `retryStrandedClaim` need no role at all. See [The weekly cycle](../product/weekly-cycle.md).
+A stopped keeper can cost a skipped week, because only the keeper can arm a week and authorise a listing, but it cannot trap your NVDA. An order already authorised keeps working on the vault's own checks, although the app's cycle page gets the order's details from the keeper and cannot offer a fill while it is down. No alert is sent automatically when the keeper stops: alerting is not wired. From one hour after expiry anyone can call `rollClose` to redeem the vault's claim, settle the redeem queue and return the vault to Idle, and `lockBook`, `settleQueue` and `retryStrandedClaim` need no role at all. See [The weekly cycle](../product/weekly-cycle.md).
 
 ### What if the issuer freezes NVDA transfers?
 
@@ -87,17 +87,17 @@ Stock Tokens are debt securities issued by Robinhood Assets (Jersey) Limited, an
 
 ### Can the team change the rules, or take my tokens?
 
-At launch the vault admin is a single deployer key; it moves to a 2-of-3 Safe (the Admin Safe) after a handover. There is no timelock on either. The admin can grant and revoke roles, set the deposit cap and the fee recipient, accept Valorem's engine fee, and change policy settings, but only inside hard caps compiled into the contracts: for example, it cannot sell calls closer than 1% above spot, set the premium floor under 0.10% of spot, or set the protocol fee above 20% of premium. The keeper creates each week's option and prices the listing, inside the vault's checks, and cannot move funds. The guardian can halt new weeks, listings and fills and cancel listings. No Stonkhouse role has a function that transfers depositors' tokens, and none can block a withdrawal. The contracts are not upgradeable.
+The vault admin is a single hot key (`0xEb82…9d9b`) with no timelock, and it is also the protocol fee recipient. Moving the admin role to a Safe is planned and has not happened. The admin can grant and revoke roles, set the deposit cap and the fee recipient, accept Valorem's engine fee, and change policy settings with immediate effect, but only inside hard caps compiled into the contracts: for example, it cannot sell calls closer than 1% above spot, set the premium floor under 0.10% of spot (where it is today), or set the protocol fee above 20% of premium. The keeper creates each week's option and prices the listing, inside the vault's checks, and cannot move funds. The guardian can halt new weeks, listings and fills and cancel listings. No Stonkhouse role has a function that transfers depositors' tokens, and none can block a withdrawal. The contracts are not upgradeable.
 
-That does not mean a key cannot cost you money. A compromised keeper could arm the lowest strike the band allows and sell the whole capacity at the premium floor to a buyer it controls. The contracts' own threat model estimates that at about 1.1% of the sold notional per week at 50% implied volatility. A compromised admin could first lower the policy to the compiled floors, for about 2.2% per week, and raise the fee to its ceiling. On Stonkhouse's own clearinghouse the admin key also holds Valorem's fee switch (see [What fees do I pay?](#what-fees-do-i-pay)). See [Launch policy and hard caps](../product/policy.md) and [Roles and admin powers](../protocol/roles.md).
+That does not mean a key cannot cost you money. A compromised keeper could arm the lowest strike the band allows and sell the whole capacity at the premium floor to a buyer it controls. By the method of the contracts' threat model, at the live policy that is about 1.45% of the sold notional per week at 50% implied volatility. A compromised admin could first lower the policy to the compiled floors, for about 2.2% per week, and raise the fee to its ceiling. See [Launch policy and hard caps](../product/policy.md) and [Roles and admin powers](../protocol/roles.md).
 
 ### Is cNVDA Nvidia stock? Can I transfer it?
 
-No. cNVDA is a vault share: a pro-rata claim on the NVDA Stock Tokens the vault holds, plus separately accrued USDG. The Stock Token underneath is itself not Nvidia equity and carries no vote. cNVDA is a standard ERC-20 token and can be transferred; USDG earned before a transfer stays with the sender. Do not send cNVDA to the vault's own address: that is not a withdrawal request, and shares sent there are never burned or paid out, so they are lost. To exit, redeem or queue a redemption instead; see [Withdrawing and the redeem queue](../getting-started/withdrawing.md). It is not listed anywhere, so there is no market to sell it into. There is no protocol token, no points programme and no airdrop.
+No. cNVDA is a vault share: a pro-rata claim on the NVDA Stock Tokens the vault holds, plus separately accrued USDG. The Stock Token underneath is itself not Nvidia equity and carries no vote. cNVDA is a standard ERC-20 token and can be transferred; USDG already credited to the shares before a transfer stays with the sender. Premium that has reached the vault from a fill but has not yet been credited goes to whoever holds the shares when it is credited (see [Claiming USDG](../getting-started/claiming-usdg.md#when-it-becomes-claimable)). Do not send cNVDA to the vault's own address: that is not a withdrawal request, and shares sent there are never burned or paid out, so they are lost. To exit, redeem or queue a redemption instead; see [Withdrawing and the redeem queue](../getting-started/withdrawing.md). It is not listed anywhere, so there is no market to sell it into. There is no protocol token, no points programme and no airdrop.
 
 ### Can I use Stonkhouse from the United States?
 
-No. Stonkhouse is not available to US persons. The same perimeter applies as to the Stock Tokens themselves, and it applies to buying the vault's calls as well as to depositing.
+No. Stonkhouse is not available to US persons, and that applies to buying the vault's calls as well as to depositing. The restriction is set by the Terms of Use; there is no technical block.
 
 ### Who operates Stonkhouse, and which terms apply?
 
@@ -109,8 +109,14 @@ Nothing stops a transfer, but be careful how it is priced. The vault's `convertT
 
 ### Earlier material mentions Overcall and a registry. Does Stonkhouse still use them?
 
-No. **History note:** earlier designs listed the vault's calls through Overcall's order book, paid Overcall a share of each fill and took each week's strikes from Overcall's on-chain registry. The current vault does none of that. The keeper creates each week's option itself, the vault checks it against the clearinghouse, and the calls are sold through the vault's own Seaport order, on the app's fill page or through any Seaport 1.6 client, with no third-party fee.
+No. **History note:** earlier designs listed the vault's calls through Overcall's order book, paid Overcall a share of each fill and took each week's strikes from Overcall's on-chain registry. The current vault does none of that. The keeper creates each week's option itself, the vault checks it against the clearinghouse, and the calls are sold through the vault's own Seaport order, on the app's cycle page, with no third-party fee.
+
+### I bought a call. How do I exercise it?
+
+On the app's cycle page, `app.stonkhouse.fun/vault/nvda/cycle`. A connected wallet holding the week's option sees an Exercise card with its balance, the strike, the NVDA received per contract and the exact USDG totals. The button works only in the exercise window, from the option's exercise timestamp until its expiry (for week 1, from Friday 2026-09-18 20:00 UTC to Saturday 2026-09-19 20:00 UTC). Pick a number of contracts. The app simulates the exercise, asks for a USDG approval to the clearinghouse of exactly the strike cost (plus its engine fee, if that is ever switched on) only when your existing approval is lower, then exercises. If the NVDA you would receive is worth no more than what you pay at the vault's spot, or spot cannot be read, it warns you and asks you to confirm. Before the window the card shows when exercise opens. Nothing is exercised automatically.
+
+You can also call `exercise(optionId, amount)` on the clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`, yourself, after approving it to take `223 USDG × amount` for week 1 (the strike times the contracts, plus 15 bps if the engine fee is on). The clearinghouse does not check whether the call is in the money. Each contract pays out 1 NVDA Stock Token.
 
 ### How do I report a security issue?
 
-Email **security@stonkhouse.fun**, and do not open a public issue. The contracts are unaudited, and a bug bounty is planned to open in the second week after mainnet launch. See [Security and audits](../protocol/security.md#reporting-a-vulnerability).
+Email **security@stonkhouse.fun**, and do not open a public issue. There is no bug bounty, and the contracts have had no external audit. See [Security and audits](../protocol/security.md#reporting-a-vulnerability).

@@ -1,20 +1,16 @@
 # Glossary
 
-### Admin Safe
+### Admin
 
-The 2-of-3 Safe multisig that will hold the vault's admin role after the launch handover. Until then the deployer key holds it. The admin sets policy inside the hard caps, the deposit cap, the price-age limit and the fee recipient, decides whether to accept Valorem's engine fee, can halt and lift a halt, and grants and revokes roles. There is no timelock on any of it. It has no function that transfers depositors' tokens. See [Roles and admin powers](../protocol/roles.md).
+The holder of the vault's `DEFAULT_ADMIN_ROLE`: today one hot EOA, `0xEb82c3D0F89d47453F94f0C2b2a2752e27a19d9b`, the deployer, which is also the protocol fee recipient. The admin sets policy inside the hard caps, the deposit cap, the price-age limit and the fee recipient, decides whether to accept Valorem's engine fee, can halt and lift a halt, and grants and revokes roles. There is no timelock on any of it, and every change takes effect at once. It has no function that transfers depositors' tokens. Moving the role to a Safe is planned and has not happened. See [Roles and admin powers](../protocol/roles.md).
 
 ### Assignment
 
-What happens to the writer of a call when a holder exercises it. Valorem takes the vault's NVDA collateral at the strike and leaves the strike price in USDG. Assignment can take the collateral at the strike. Valorem spreads each exercise pro rata by amount written across everyone who wrote the same option, so a call the vault sold can be assigned whoever exercises. Because the vault writes only what it sells, it can never be assigned on more contracts than it sold. See [Assignment](../product/assignment.md).
-
-### Bootstrap admin
-
-The launch arrangement for the vault's admin role: the deployer's own key holds `DEFAULT_ADMIN_ROLE` from deployment until a two-step handover to the 2-of-3 Admin Safe. Until the handover that one key holds every admin power, including the fee up to its 20%-of-premium ceiling, the fee recipient, the deposit cap, acceptance of Valorem's engine fee and role grants. On a clearinghouse deployed by Stonkhouse, the admin address named at that deployment also holds the clearinghouse's fee switch. See [Roles and admin powers](../protocol/roles.md).
+What happens to the writer of a call when a holder exercises it. Valorem takes the vault's NVDA collateral at the strike and leaves the strike price in USDG. Assignment can take the collateral at the strike. Valorem spreads each exercise pro rata by amount written across the writers in a bucket, and every write made before an option's first exercise shares one bucket, so a call the vault sold can be assigned whoever exercises. Because the vault writes only what it sells, it can never be assigned on more contracts than it sold. See [Assignment](../product/assignment.md).
 
 ### Capacity
 
-How many more contracts the vault can sell in the current week: the lower of 95% of its NVDA (in whole contracts) and 50 contracts at launch, minus the contracts already written. A listing may offer at most the capacity at the moment it is authorised, and every fill is measured against it again, so a fill can be refused if the vault's NVDA has fallen in between.
+How many more contracts the vault can sell in the current week: the lower of 95% of its NVDA (in whole contracts) and 50 contracts under the live policy, minus the contracts already written. A listing may offer at most the capacity at the moment it is authorised, and every fill is measured against it again, so a fill can be refused if the vault's NVDA has fallen in between.
 
 ### cNVDA
 
@@ -46,7 +42,7 @@ The moment, fixed in each week's option type, when the sale window closes and th
 
 ### Exercise window
 
-The period from the exercise timestamp to expiry during which holders of the week's calls can exercise them on Valorem. The keeper sets it to 24 hours; the vault accepts nothing shorter than one day.
+The period from the exercise timestamp up to expiry during which holders of the week's calls can exercise them on the Valorem clearinghouse. The keeper sets it to 24 hours; the vault accepts nothing shorter than one day. Holders exercise through the Exercise card on the app's cycle page, whose button is enabled only inside this window, or by calling `exercise` on the clearinghouse directly.
 
 ### Expiry
 
@@ -54,11 +50,11 @@ The end of the week's option, fixed in its option type: 24 hours after the exerc
 
 ### Guardian
 
-A single-key role that can halt writes (new weeks, listings and every fill) and cancel listings, and nothing else. It cannot touch collateral, change policy or stop a withdrawal. Lifting a halt needs the admin role (the deployer key at launch, the Admin Safe after the handover).
+A single-key role that can halt writes (new weeks, listings and every fill) and cancel listings, and nothing else. It cannot touch collateral, change policy or stop a withdrawal. Lifting a halt needs the admin role.
 
 ### Keeper
 
-The hot-key service that runs the week: it creates the week's option type on the clearinghouse, arms it with `rollOpen`, authorises and cancels listings, and normally calls `lockBook`, `rollClose` and `settleQueue`, which need no role. It never holds option tokens and cannot move funds. The vault checks every proposal against its own rules. See [How Stonkhouse works](../getting-started/how-it-works.md).
+The hot-key service that runs the week: it creates the week's option type on the clearinghouse, arms it with `rollOpen`, authorises and cancels listings, and normally calls `lockBook`, `rollClose` and `settleQueue`, which anyone else can also call (`rollClose` from one hour after expiry). It never holds option tokens and cannot move funds. The vault checks every proposal against its own rules. See [How Stonkhouse works](../getting-started/how-it-works.md).
 
 ### lockBook
 
@@ -70,7 +66,7 @@ A Valorem call option defined by six fixed terms: the underlying (the NVDA Stock
 
 ### OTM (out of the money)
 
-A call whose strike is above the current price. Stonkhouse arms only options whose strike is 3% to 12% above spot at launch, and never less than 1% above spot under the hard caps. At every fill the strike must still be at least the band's lower bound at live spot.
+A call whose strike is above the current price. Under the live policy the vault arms only options whose strike is 3% to 12% above spot, and the hard caps never allow less than 1%. The keeper aims for 5% to 11.5%. At every fill the strike must still be at least the band's lower bound at live spot.
 
 ### Premium
 
@@ -78,11 +74,11 @@ The USDG a buyer pays for a call. Premium is paid only if a buyer fills. The who
 
 ### Premium floor
 
-The least a fill must pay: 0.40% of spot per contract at launch, never below 0.10% under the hard caps, plus the value at spot of Valorem's engine fee if that fee is on. The vault checks it when a listing is authorised and again at every fill, against the spot of that moment.
+The least a fill must pay: 0.10% of spot per contract under the live policy, which is also the compiled minimum, plus the value at spot of Valorem's engine fee if that fee is on. The vault checks it when a listing is authorised and again at every fill, against the spot of that moment.
 
 ### Protocol fee
 
-Stonkhouse's fee: 5% of the premium at launch, with a compiled ceiling of 20%. Never charged on deposits, idle NVDA or strike proceeds. See [Fees](../product/fees.md).
+Stonkhouse's fee: 5% of the premium under the live policy, changeable by the admin up to a compiled ceiling of 20%. Never charged on deposits, idle NVDA or strike proceeds. See [Fees](../product/fees.md).
 
 ### Redeem queue
 
@@ -110,7 +106,7 @@ The function that starts the week. Only the keeper can call it, and only while t
 
 ### Safe
 
-A smart-contract multisig wallet that needs a set number of signers to act. Stonkhouse's admin role moves to a 2-of-3 Safe after the launch handover (a single deployer key holds it until then), and the protocol fee is paid to a fee Safe.
+A smart-contract wallet that needs a set number of its owners' signatures to act. The switch for the Valorem engine fee on Stonkhouse's clearinghouse is held by a 1-of-1 Safe, so one owner's signature is enough. The vault's admin role is not held by a Safe today, and the protocol fee is paid to the admin's hot key.
 
 ### Seaport 1.6
 
@@ -126,7 +122,7 @@ NVDA per cNVDA share: the vault's idle NVDA, plus NVDA locked in the current wee
 
 ### Share-price floor
 
-A limit compiled into the vault: it sells no new shares while one share is worth less than one millionth of one base unit of NVDA. Only a vault that has lost almost all its NVDA with its shares still outstanding reaches it. Deposits reopen by themselves when the share price recovers.
+A limit compiled into the vault: it sells no new shares while one cNVDA is worth less than one millionth of an NVDA. Only a vault that has lost almost all its NVDA with its shares still outstanding reaches it. Deposits reopen by themselves when the share price recovers.
 
 ### Stock Token
 
@@ -138,7 +134,7 @@ A week's Valorem claim that `rollClose` could not redeem, because a token issuer
 
 ### Strike
 
-The price at which a call can be exercised, in USDG per contract, fixed in the week's option type. The keeper sets it about 5% above spot, rounded to a whole USDG. If a call is assigned, the vault receives the strike for each assigned contract.
+The price at which a call can be exercised, in USDG per contract, fixed in the week's option type. The keeper picks the strike where a call's delta is about 0.15 in Cboe's delayed NVDA option quotes, kept between 5% and 11.5% above spot under the live policy and rounded to a whole USDG. If a call is assigned, the vault receives the strike for each assigned contract.
 
 ### USDG
 
@@ -150,7 +146,7 @@ The USDG part of a redemption payout that could not be transferred when you call
 
 ### Valorem Clear
 
-The third-party options clearinghouse that holds the vault's NVDA collateral, mints the option tokens and a claim for the writer, and settles exercise and assignment. The instance the vault uses is chosen at deployment; the launch plan is Stonkhouse's own deployment of the unmodified contract. It has no owner, no pause and no upgrade path. Its one admin key, `feeTo`, can switch the engine fee on or off, hand that key on, change the token metadata generator and sweep collected fees; it cannot touch collateral.
+The options clearinghouse contract, written by Valorem, that holds the vault's NVDA collateral, mints the option tokens and a claim for the writer, and settles exercise and assignment. The vault uses Stonkhouse's own deployment, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`, whose code matches upstream Valorem except for its metadata hash; it is not source-verified. It has no owner, no pause and no upgrade path. Its one admin key, `feeTo` (a 1-of-1 Safe), can switch the engine fee on or off, hand that key on, change the token metadata generator and sweep collected fees; it cannot touch collateral.
 
 ### Valorem engine fee
 

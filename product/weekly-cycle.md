@@ -21,7 +21,7 @@ The vault has no calendar of its own and reads nobody else's. Each week the keep
 **History.** Earlier designs took the weekly cycle, its strikes and its deadlines from Overcall's registry, and listed through Overcall. The current vault does not use Overcall for anything.
 {% endhint %}
 
-The keeper's built-in holiday table covers 2026 and 2027. The Friday holidays in it, and where exercise lands instead:
+The keeper's built-in holiday table covers 2026 and 2027. The Friday holidays in it that are still to come, and where exercise lands instead:
 
 | Friday holiday | Exercise instead |
 |---|---|
@@ -54,7 +54,7 @@ Anyone can create a Valorem option type with `newOptionType`, and a type's terms
 | Underlying | The NVDA Stock Token | Must be this vault's asset |
 | Contract size | 1 NVDA | Exactly 1 NVDA |
 | Exercise asset | USDG | Must be USDG |
-| Strike | Spot plus 5%, rounded to the nearest whole USDG | At live spot, inside the band: at least 3% and at most 12% above (launch policy), both bounds checked |
+| Strike | From Cboe's delayed NVDA option quotes: the call with a delta of about 0.15, rounded to a whole USDG, kept 5% to 11.5% above spot under the current band | At live spot, inside the band: at least 3% and at most 12% above (current policy), both bounds checked |
 | Exercise timestamp | The next NYSE Friday close, 16:00 ET, at least 6 hours away | At least 1 hour after the `rollOpen` |
 | Expiry timestamp | Exercise plus 24 hours | At least 1 day after exercise, and at most 21 days after the `rollOpen` |
 
@@ -66,11 +66,11 @@ The keeper then calls `rollOpen(optionId)`. Only the keeper can. The vault reads
 * the id is an option type, not a claim and not an unknown id;
 * every rule in the right-hand column above;
 * Valorem's engine fee is off, or the vault admin has accepted it;
-* the Stock Token has not paused its oracle, the price feed is no older than 4 days (launch setting), and the strike sits inside the band at that price.
+* the Stock Token has not paused its oracle, the price feed is no older than `maxPriceAge` (currently 4 days), and the strike sits inside the band at that price.
 
 If every check passes, the vault gives the cycle its own number, snapshots the strike, exercise and expiry, resets its listing budget to three, and moves to Listed. No NVDA moves and no option token exists yet.
 
-If any check fails, nothing happens and the vault stays Idle. The keeper keeps trying for that Friday, so a temporary problem such as a stale price feed can still end in a week armed later. If nothing arms before that Friday, the week is skipped. Deposits and instant redemptions stay open through a skipped week, and a skipped week is a normal outcome.
+If any check fails, nothing happens and the vault stays Idle. The keeper also arms nothing when Cboe's option quotes are missing, stale or inconsistent. It keeps trying for that Friday on each tick, so a temporary problem such as a stale price feed can still end in a week armed later. Once that Friday's close is less than 6 hours away (`KEEPER_ARM_LEAD_S`), the keeper targets the following Friday instead, and the week is skipped. Deposits and instant redemptions stay open through a skipped week, and a skipped week is a normal outcome.
 
 The keeper arms as soon as the vault is Idle and flat and these checks pass. After a normal close that is usually during the weekend, so the week's strike is set against the price feed's last Friday print, which can come a few hours before the close. See [Risks](risks.md#the-price-feed).
 
@@ -82,12 +82,12 @@ The keeper proposes one Seaport 1.6 order, and `approveListing` (keeper only) au
 * there is one offer item: this cycle's option id, a fixed number of contracts, at most the vault's remaining capacity (the policy maximum on total assets, less the contracts already written this cycle);
 * there is one payment item: USDG to the vault, a fixed amount that divides exactly by the number of contracts, at a price per contract no higher than the strike;
 * the order is live now, ends no later than the exercise timestamp, and uses the vault's current Seaport counter;
-* at live spot the strike is not below the band floor, and the price is not below the premium floor (0.40% of spot per contract at launch);
+* at live spot the strike is not below the band floor, and the price is not below the premium floor (currently 0.10% of spot per contract);
 * no other listing is live, and fewer than three have been authorised this cycle. Every approval spends one of the three, cancelled or not.
 
 The vault then validates the order on Seaport, so it fills with an empty signature. The vault has no signing key, and there is no venue fee item in the order.
 
-A buyer fills the listing on the app's fill page or with any Seaport 1.6 client, taking any whole number of the contracts left (see [Buying calls](buying-calls.md)). On every fill Seaport calls the vault before it moves anything, and the vault runs the fill gate:
+A buyer fills the listing on the app's cycle page or with their own Seaport 1.6 client, taking any whole number of the contracts left (see [Buying calls](buying-calls.md)). On every fill Seaport calls the vault before it moves anything, and the vault runs the fill gate:
 
 * the caller is Seaport, and the order is this vault's live listing;
 * the vault is Listed, writes are not halted, and the exercise timestamp has not arrived;
@@ -103,25 +103,29 @@ If the fill passes, the vault writes exactly the contracts being bought into Val
 * If spot rises until the listing's price is under the premium floor, fills are refused until the keeper reprices, which spends one of the week's three listings.
 * If spot rises until the strike itself is under the band floor, fills are refused whatever the price, until spot falls back.
 
-With the listing from the fork rehearsal below (strike 223 USDG, price 0.856189 USDG per contract, spot 211.93 USDG when listed) and the launch policy, the premium floor would refuse fills once spot passed about 214.05 USDG, and the band floor would refuse them once spot passed about 216.50 USDG. Those thresholds are computed from the rehearsal's listing, not observed. In the keeper's extended fork rehearsal, a 1.5% rise in spot (to 215.11 USDG) put that same 0.856189 price under the fill floor of 0.860426 USDG: the fill was refused, the keeper cancelled and relisted at 0.869032 USDG with the week's third and last listing, and a fill at the new price went through.
+For cycle 1 (strike 223 USDG, 0.856436 USDG per contract) under the current policy, the band floor refuses fills once spot passes about 216.50 USDG, about 2.2% above the 211.92 USDG the feed showed on 15 September 2026. The premium floor, at 0.10% of spot, would not refuse that price below a spot of about 856 USDG. Both thresholds are computed, not observed. In the keeper's extended fork rehearsal, run with the earlier 0.40% floor, a 1.5% rise in spot (to 215.11 USDG) put a 0.856189 price under the fill floor of 0.860426 USDG: the fill was refused, the keeper cancelled and relisted at 0.869032 USDG with the week's third and last listing, and a fill at the new price went through.
 {% endhint %}
 
-### How the keeper chooses, by default
+### How the keeper chooses
 
-The contracts set the bounds. Inside them, the keeper software (`keeper/src/calendar.ts`, `keeper/src/policy.ts`, `keeper/src/roll.ts` and `keeper/src/config.ts` in the app repository) makes these choices with its default settings. They are operating choices, not commitments: whoever runs the keeper can change them in its configuration, without a contract change.
+The contracts set the bounds. Inside them, the keeper software (`keeper/src/calendar.ts`, `keeper/src/vol.ts`, `keeper/src/policy.ts`, `keeper/src/roll.ts` and `keeper/src/config.ts` in the app repository) makes these choices with the settings it runs in production. They are operating choices, not commitments: whoever runs the keeper can change them in its configuration, without a contract change.
 
 * **Window:** the next NYSE Friday close at 16:00 ET, at least 6 hours away (otherwise the Friday after), with expiry 24 hours later.
-* **Strike:** spot plus 5%, rounded to the nearest whole USDG. While that falls outside the policy band, the keeper arms nothing; it looks again on each tick until the Friday goes by.
+* **Market data:** Cboe's free, delayed NVDA option chain, fetched once per decision. It must be for NVDA, dated within 4 days, and from the latest NYSE session that has closed. Missing, stale or inconsistent data skips the week with a named reason; the keeper never falls back to another way of pricing.
+* **Strike:** the strike of the listed call expiring on the week's close day with a delta of 0.15, interpolated between the two listed strikes around it, converted to the token's price and rounded to a whole USDG, then kept at least 2 percentage points above the band floor and 0.5 points below its ceiling: 5% to 11.5% above spot under the current band. When no such strike can be found, the keeper arms nothing; it looks again on each tick until that Friday's close is less than 6 hours away, and then moves on to the following Friday.
 * **Size:** the vault's whole remaining capacity, in one listing.
-* **Price:** the fill-time premium floor per contract at the current spot, raised by 1% and rounded up to the next USDG base unit, never above the strike. The margin means a small rise in spot does not immediately make the listing unfillable. With no model price behind it, this default sells at just above the floor. See [Risks](risks.md#keeper-key-compromise).
+* **Price:** the higher of the fill-time premium floor at the current spot plus 0.5% (`KEEPER_PREMIUM_MARGIN_BPS` 50 in production; the code default is 1%) and the quotes' mid price at the strike plus 10%, rounded up to the next USDG base unit, never above the strike. The cycle page shows the inputs the keeper reports for the live listing. See [Risks](risks.md#keeper-key-compromise).
 * **Listing length:** from now until the exercise timestamp.
-* **Where the order lives:** the keeper stores the order and serves it from its own `/orders` endpoint, with an empty signature. The app's fill page reads it from there, checks it against the chain, and offers the fill.
-* **Repricing:** each tick the keeper repeats the fill gate's spot checks. If a rise in spot has put the price under the premium floor, it cancels and relists at the new floor, within the vault's three listings. If the strike has fallen under the band floor, no price helps: the keeper raises an alert and leaves the listing in place for spot to fall back. Once the three listings are spent, a refused listing stays unfillable.
+* **Where the order lives:** the keeper stores the order and serves it, with an empty signature, from its `/orders` endpoint on a private network. The app reads it from there, checks it against the chain, and offers the fill on the cycle page. The keeper has no public endpoint.
+* **Repricing:** each tick the keeper repeats the fill gate's spot checks. If a rise in spot has put the price under the premium floor, it cancels and relists, within the vault's three listings. At most every 30 minutes it also checks fresh quotes, and when the market-based ask is more than 25% above the live ask it cancels and relists higher, but only if a listing would still be left afterwards. Stale quotes never trigger that upward reprice, and it applies only to listings the keeper priced in `vol` mode. Without fresh quotes, a floor reprice or a relist prices from the fair value stored with the week's previous listing or its arm, or at the floor plus margin at the new spot if that is higher, so a relist after spot has fallen can ask less than before. With no fair value stored, as for cycle 1, nothing can be priced: a floor reprice leaves the live listing in place, and a relist waits for fresh quotes. If the strike has fallen under the band floor, no price helps: the keeper records an alert and leaves the listing in place for spot to fall back. Once the three listings are spent, a refused listing stays unfillable.
 * **Sold out:** if the listing sells out and deposits made during the week have added capacity, the keeper lists the remainder, within the three.
 * **Closing:** `lockBook` at the exercise timestamp, `rollClose` at expiry, and `settleQueue` whenever the vault is Idle with shares queued.
-* **Stranded claim:** no new week is armed; the keeper tries `retryStrandedClaim()` every hour, simulating it first so a failed attempt costs no gas, and raises an alert.
+* **Stranded claim:** no new week is armed; the keeper tries `retryStrandedClaim()` every hour, simulating it first so a failed attempt costs no gas, and records an alert.
+* **Alerts:** the keeper logs its alerts and stores them in its database. They are not delivered to anyone today: no alert webhook or relay is running.
 
-In a fork rehearsal of the keeper run on 15 September 2026 (UTC), against a copy of Robinhood Chain with the live Valorem clearinghouse, Seaport 1.6 and USDG, and a test price feed seeded with the real Chainlink print, spot was 211.93 USDG. The keeper created a 223 USDG strike exercising on Friday 18 September at 16:00 ET (20:00 UTC), armed it, and with 25 NVDA in the vault listed 23 contracts at 0.856189 USDG each, against a floor of 0.847711. Those are rehearsal figures, not a forecast.
+On the live vault, the keeper created cycle 1's option type and armed it on 15 September 2026: a 223 USDG strike, exercise on Friday 18 September at 16:00 ET (20:00 UTC, timestamp 1789761600) and expiry 24 hours later (1789848000). Its first listing was cancelled and replaced the same day, so one of the cycle's three listings is left. Both listings were priced by the keeper version before `vol` mode, from the 0.40% premium floor then in force plus the keeper's margin.
+
+In a fork rehearsal of the keeper run on 15 September 2026 (UTC), against a copy of Robinhood Chain with Seaport 1.6, USDG, a Valorem clearinghouse already on the chain with the same code as the vault's, and a test price feed seeded with the real Chainlink print, spot was 211.93 USDG. The keeper ran in fixed-price mode with the 0.40% floor: it created a 223 USDG strike (spot plus 5%) exercising on Friday 18 September at 16:00 ET (20:00 UTC), armed it, and with 25 NVDA in the vault listed 23 contracts at 0.856189 USDG each, against a floor of 0.847711. Those are rehearsal figures, not a forecast.
 
 ### Listed → Exercisable: `lockBook`
 

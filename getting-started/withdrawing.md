@@ -19,13 +19,13 @@ A withdrawal from an open week is never a promise of a fixed number of tokens. A
 | Exercisable | Closed (`UseQueue`) | Open. Settles at `rollClose`. |
 | Settling | Closed. This phase lasts one transaction. | — |
 
-The app shows "instant path open" or "queue only" based on the vault's `canRedeemInstantly()`. The vault's redemption preview returns zero whenever the queue is the only path, so the app never shows an instant amount you cannot actually get.
+The Withdraw card shows "instant path open" or "queue only" based on the vault's `canRedeemInstantly()`. The vault's redemption preview returns zero whenever the queue is the only path, so the app never shows an instant amount you cannot actually get.
 
 ## Instant redemption
 
 ### Step by step
 
-1. Open the NVDA vault at `app.stonkhouse.fun` and connect your wallet.
+1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect your wallet.
 2. Enter the number of cNVDA shares to redeem. The app shows "Redeem now" when the instant path is open.
 3. Confirm. Your shares burn and NVDA is sent to you in the same transaction.
 
@@ -97,9 +97,9 @@ If the week's claim is stranded (see [How Stonkhouse works](how-it-works.md#when
 1. **Now:** its share of the idle NVDA, and the USDG its escrowed shares earned. `completeRedeem` pays these straight away.
 2. **When the claim is redeemed:** a pro-rata share of the stranded claim, recorded as `EpochStrandShare`. It becomes NVDA and USDG only when someone's `retryStrandedClaim()` succeeds. Your next `completeRedeem` after that pays it.
 
-Until the claim is redeemed, `previewCompleteRedeem` quotes that share as nothing, and a `completeRedeem` with nothing else to collect reverts with `StillStranded`. The share is owed, not lost. The app shows it on the stranded banner, with a button that sends `retryStrandedClaim`.
+Until the claim is redeemed, `previewCompleteRedeem` quotes that share as nothing, and a `completeRedeem` with nothing else to collect reverts with `StillStranded`. The share is owed, not lost. The app shows it on the stranded-claim banner, whose "Retry claim" button sends `retryStrandedClaim`.
 
-In the fork rehearsal, a holder queued 2 of the vault's 16 shares in the week whose claim was stranded. At the close that holder was owed 1.55 NVDA of idle collateral, 0.218766 USDG and 12.5% of the claim. After the retry returned 1 NVDA and 239 USDG, one `completeRedeem` paid 1.675 NVDA and 30.093766 USDG.
+In the keeper's fork dry run (see [How Stonkhouse works](how-it-works.md#a-week-from-a-fork-rehearsal)), a holder queued 2 of the vault's 16 shares in the week whose claim was stranded. At the close that holder was owed 1.55 NVDA of idle collateral, 0.218766 USDG and 12.5% of the claim. After the retry returned 1 NVDA and 239 USDG, one `completeRedeem` paid 1.675 NVDA and 30.093766 USDG.
 
 ### What can block each step
 
@@ -109,13 +109,13 @@ In the fork rehearsal, a holder queued 2 of the vault's 16 shares in the week wh
 | `settleQueue` | The vault not being Idle (`WrongPhase`); nothing queued (`NothingQueued`) | A halt on writes, an issuer freeze, or a stranded claim |
 | `completeRedeem` | The epoch has not settled yet (`EpochNotSettled`); nothing queued (`NothingQueued`); only a share of a still-stranded claim left (`StillStranded`); only USDG left and USDG cannot move (`UsdgLegBlocked`); a Stock Token pause or blocklist, because the NVDA transfer reverts | A halt on writes; a USDG pause or freeze while there is NVDA to pay |
 
-You have one queue slot per account. If you queue again after an earlier epoch has settled but before you completed it, the earlier amounts are moved into your owed balance automatically. No tokens move at that point, which is why queueing still works during an issuer freeze. `completeRedeem` pays everything you are owed at once, and it can be called for the earlier amounts even while your new entry is still waiting. The app offers a separate button for those earlier amounts only in some states; you can always call `completeRedeem` directly.
+You have one queue slot per account. If you queue again after an earlier epoch has settled but before you completed it, the earlier amounts are moved into your owed balance automatically. No tokens move at that point, which is why queueing still works during an issuer freeze. `completeRedeem` pays everything you are owed at once, and it can be called for the earlier amounts even while your new entry is still waiting. The Withdraw card offers "Collect earlier settled redemption" for those earlier amounts only in some states; you can always call `completeRedeem` directly.
 
 ## Why withdrawals queue at all
 
 While a week has calls sold, the NVDA behind them is locked in Valorem until expiry. The vault cannot hand it back early, and it will not quote a price for a position whose outcome depends on whether holders exercise. The queue is the mechanism, not a discretionary gate. No Stonkhouse key can jump it or stop it. The token issuers are outside Stonkhouse's control: a Stock Token restriction can hold up the NVDA leg of a payout until it lifts, and a USDG restriction can defer the USDG leg or strand the week's claim. See [Risks](../product/risks.md).
 
-Do not send cNVDA to the vault's own address. That is not a withdrawal request: shares sent there are never burned or paid out, so they are lost. cNVDA is not listed anywhere, so there is no secondary market to sell into instead.
+Do not send cNVDA to the vault's own address. That is not a withdrawal request: shares sent there are never burned or paid out, so they are lost.
 
 ## Related
 

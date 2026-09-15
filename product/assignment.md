@@ -8,15 +8,15 @@ Assignment can take the collateral at the strike. When a call holder exercises, 
 
 ## When it can happen
 
-A call can be exercised only during the cycle's exercise window, which opens at the exercise timestamp and closes at expiry. By default the keeper sets exercise at the NYSE Friday close, 16:00 ET (Thursday when the Friday is an NYSE holiday), and expiry 24 hours later; the option type's own timestamps are what count (see [The weekly cycle](weekly-cycle.md)). A holder would normally exercise only if NVDA trades above the strike. By default the keeper sets the strike about 5% above spot when the week is armed, and the vault requires it to be 3% to 12% above spot at that moment (launch band). So it takes a move, though not an enormous one, and the week has several days in which to make it.
+A call can be exercised only during the cycle's exercise window: the clearinghouse accepts an exercise from the exercise timestamp up to, but not including, the expiry timestamp. The keeper sets exercise at the NYSE Friday close, 16:00 ET (Thursday when the Friday is an NYSE holiday), and expiry 24 hours later; the option type's own timestamps are what count (see [The weekly cycle](weekly-cycle.md)). A holder would normally exercise only if NVDA trades above the strike. The keeper sets the strike 5% to 11.5% above spot when the week is armed, from the option quotes, and the vault requires it to be 3% to 12% above spot at that moment (current policy). So it takes a move, though not an enormous one, and the week has several days in which to make it.
 
-Exercise happens entirely inside Valorem, with no call into the vault. The NVDA leaves the vault's claim immediately. The strike USDG stays inside the claim until `rollClose` redeems it after expiry.
+Exercise happens entirely inside Valorem, with no call into the vault. The NVDA leaves the vault's claim immediately. The strike USDG stays inside the claim until `rollClose` redeems it after expiry, or `retryStrandedClaim` if the close could not.
 
 ## How Valorem assigns an exercise
 
-Valorem groups writes of the same option type into **buckets**. Every write made before the first exercise of that type goes into the same bucket, whoever the writer is. The vault writes only inside fills, and fills stop at the exercise timestamp, before any exercise is possible, so all of a week's fills land in one bucket together with anything other writers wrote before the window opened. Writes made after the first exercise open new buckets.
+Valorem groups writes of the same option type into **buckets**. Every write made before the first exercise of that type goes into the same bucket, whoever the writer is. The vault writes only inside fills, and fills stop at the exercise timestamp, before any exercise is possible, so all of a week's fills land in one bucket together with anything other writers wrote before the first exercise, including writes made after the window opened but before anyone exercised. Writes made after the first exercise open new buckets.
 
-When a holder exercises, Valorem walks the buckets in an order that is fixed when the option type is created and that anyone can compute. **Inside a bucket, it assigns the exercise pro rata by amount written, across every writer in that bucket**, whether or not their own calls were sold and whoever holds the calls being exercised. For the vault's bucket, that is every writer of the option type who wrote before the window opened. So:
+When a holder exercises, Valorem starts at a bucket picked from a seed fixed when the option type is created (the seed modulo the number of buckets not yet fully exercised) and walks on from there; anyone can compute the order. **Inside a bucket, it assigns the exercise pro rata by amount written, across every writer in that bucket**, whether or not their own calls were sold and whoever holds the calls being exercised. For the vault's bucket, that is every writer of the option type who wrote before the first exercise. So:
 
 * the vault can be assigned because of calls that other writers sold, or that someone wrote and exercised themselves;
 * the vault's share of an exercise depends on how much others wrote into the same bucket, which the vault does not control;
@@ -61,7 +61,7 @@ What you do with the USDG is up to you. It sits in your claimable balance until 
 
 ## Worked example
 
-These figures come from a fork rehearsal of the keeper run on 15 September 2026 (UTC), against a copy of Robinhood Chain with the live Valorem clearinghouse, Seaport 1.6 and USDG, and a test price feed seeded with the real Chainlink print. They are not a forecast.
+These figures come from a fork rehearsal of the keeper run on 15 September 2026 (UTC), against a copy of Robinhood Chain with Seaport 1.6, USDG, a Valorem clearinghouse already on the chain with the same code as the vault's, and a test price feed seeded with the real Chainlink print. The keeper priced at a fixed margin over the 0.40% floor then in force. They are not a forecast.
 
 The keeper armed a 223 USDG strike with spot at 211.93 USDG. Two buyers filled 2 and then 3 calls at 0.856189 USDG each, so the vault wrote and sold 5. A deposit made while the week was Listed brought the vault to 20 NVDA behind 20 cNVDA. At the exercise window spot was set to 228 USDG, above the strike, and one buyer exercised 2 of the 5. Nobody else had written that option type, so both exercised contracts were assigned to the vault's claim.
 

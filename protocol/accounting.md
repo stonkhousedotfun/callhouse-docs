@@ -84,10 +84,10 @@ assets = shares * (totalAssets + 1) / (totalSupply + 1)
 | 2 | The phase is not `Idle` or `Listed` | Nothing can be priced honestly while the week is exercisable or settling. |
 | 3 | `Listed` and `block.timestamp >= cycleExerciseTs` | From that second a contract can be assigned, and assignment lowers NAV with no callback while its strike USDG is still in the claim. |
 | 4 | A claim is open and the vault is `Idle` (stranded), or the claim holds unredeemed assignment proceeds | The proceeds inside the claim belong to the holders of record. Nobody may buy in against that gap. |
-| 5 | `asset.balanceOf(vault) < reservedAssets` | Only an issuer burn (or a Valorem fee past the utilisation ceiling) produces this. A new deposit would otherwise be paid straight out to earlier settled redeemers. |
+| 5 | `asset.balanceOf(vault) < reservedAssets` | Only an issuer burn produces this: a fill whose write would leave the balance below the reserve reverts `ReserveBreached`. A new deposit would otherwise be paid straight out to earlier settled redeemers. |
 | 6 | `totalSupply() > totalAssets() × 1,000,000` | The share-price floor (`MAX_SHARES_PER_ASSET`, compiled in). A book burnt or assigned to nothing with its shares outstanding must not sell new shares for dust, and the floor bounds the share supply far inside what the index arithmetic can carry. A fresh vault (`totalSupply() == 0`) is not below it. |
 
-Separately, a deposit that would take `totalAssets()` past `depositCap` reverts `DepositCapExceeded`, and `maxDeposit` returns `depositCap - totalAssets()` (0 once the cap is reached). The launch cap is 20 NVDA (`script/Deploy.s.sol`). Each refusal lifts by itself when its condition clears; none needs governance.
+Separately, a deposit that would take `totalAssets()` past `depositCap` reverts `DepositCapExceeded`, and `maxDeposit` returns `depositCap - totalAssets()` (0 once the cap is reached). The live cap is 20 NVDA (`depositCap()`); the admin can change it with `setDepositCap`, with no bound. Each refusal lifts by itself when its condition clears; none needs governance.
 
 A deposit made while `Listed`, before the exercise timestamp, is allowed. It buys into the open short: shares are priced on a NAV that values the week's call at zero, a later fill in the same week can be written against the new NVDA, and if the week ends assigned the loss reaches every share through the share price. What a late depositor does not get is premium indexed before their shares existed (see [Checkpoint before mint](#checkpoint-before-mint)).
 
@@ -158,11 +158,11 @@ It has three callers, and they pass different `feeFree` values:
 | `retryStrandedClaim` via `_harvest(usdgReturned - queueUsdg)` | the live shares' part of the USDG the stranded claim returned | The same strike proceeds, redeemed late. The queue's part goes to its reserve instead. |
 | `deposit`, `mint` and `settleQueue` via `_checkpointHarvest()` | `0` | Strike proceeds sit inside the Valorem claim until it is redeemed, so none can be in the balance when a checkpoint runs. |
 
-The fee rate is `policy.protocolFeeBps`. It is 500 (5% of premium) at launch (`Policy.launchDefaults`), and `Policy.validate` caps it at 2000 (20%) in bytecode. The fee-free exclusion is code, not a policy field, so no admin setting can bring strike proceeds into the fee base. An unfilled week has no premium in the fee base and is charged nothing. If it is assigned anyway, the close harvests the strike proceeds, fee-free.
+The fee rate is `policy.protocolFeeBps`, read when the harvest runs, not when the premium arrived. The live `policy()` has 500 (5% of premium). The admin can change it at any time with `setPolicy`, and `Policy.validate` caps it at 2000 (20%) in bytecode, so a change made before a harvest applies to premium already received but not yet indexed. The fee-free exclusion is code, not a policy field, so no admin setting can bring strike proceeds into the fee base. An unfilled week has no premium in the fee base and is charged nothing. If it is assigned anyway, the close harvests the strike proceeds, fee-free.
 
 There is no other fee inside the fill. Every listing has exactly one consideration item, USDG to the vault, so the premium a buyer pays and the premium the vault receives are the same figure (`src/lib/SeaportOrderLib.sol` `_checkConsideration`).
 
-**Valorem's engine fee is not a Stonkhouse fee, and it is off.** The clearinghouse can charge 15 bps of each write's notional, in NVDA, on top of the collateral. It is switched off at deployment (`script/Deploy.s.sol` and `script/DeployClear.s.sol` both require it). If it is ever switched on, the vault refuses to arm or fill until the admin calls `acceptValoremFee(true)`. Once accepted, every fill pulls `collateral × 15 / 10,000` NVDA (at least 1 base unit) from the vault's balance, which lowers `totalAssets()` by that amount, and the fill's premium floor is raised by that NVDA valued at spot, so the buyer pays its value in USDG (`src/lib/ValoremLib.sol` `writeOnFill`). With Stonkhouse's own clearinghouse, the fee goes to the admin; see [Roles and admin powers](roles.md#the-valorem-engine-fee-on-our-own-clearinghouse).
+**Valorem's engine fee is not a Stonkhouse fee, and it is off.** The clearinghouse can charge 15 bps of each write's notional, in NVDA, on top of the collateral. On the live clearinghouse `feesEnabled()` is `false`, and the vault's `valoremFeeAccepted()` is `false`. If it is ever switched on, the vault refuses to arm or fill until the admin calls `acceptValoremFee(true)`. Once accepted, every fill pulls `collateral × 15 / 10,000` NVDA (at least 1 base unit) from the vault's balance, which lowers `totalAssets()` by that amount, and the fill's premium floor is raised by that NVDA valued at spot, so the buyer pays its value in USDG (`src/lib/ValoremLib.sol` `writeOnFill`). The fee accrues in the clearinghouse and can be swept only by its `feeTo`, which on the live clearinghouse is a 1-of-1 Safe, not the vault admin; see [Roles and admin powers](roles.md#the-valorem-engine-fee-on-our-own-clearinghouse).
 
 **The fee payment is best-effort.** The fee accrues in `pendingFeeUsdg`. `rollClose` and `retryStrandedClaim` try to pay it to `feeRecipient` with a raw `transfer` call, clamped to the vault's balance, that cannot revert them (`_tryPayFee`). If the transfer fails, the fee stays pending. Anyone can call `sweepFee()` later, and it always pays the stored `feeRecipient`, never the caller. It reverts `NothingToClaim` if nothing moved.
 
@@ -174,6 +174,8 @@ There is no other fee inside the fill. Every listing has exactly one considerati
 - `mint`: deposit gate, checkpoint, `previewMint`, cap check, transfer in, `_mint`.
 
 Without the checkpoint, premium that landed when a buyer filled mid-week would sit un-indexed until `rollClose`. Anyone could then deposit just before the close and take a share of premium earned entirely by other depositors' collateral. With it, the index is fixed first and new shares start from the current value. The checkpoint transfers nothing. Its only external call is a read of the vault's own USDG balance (`usdg.balanceOf`). Any fee it charges goes to `pendingFeeUsdg` and is paid at the close or by `sweepFee`.
+
+**Premium is not claimable until it is indexed.** A fill's USDG lands in the vault's balance at once, but it enters the index, and `claimableUsdg`, only when `_accrueHarvest` next runs: at a `deposit` or `mint`, `settleQueue`, `rollClose` or `retryStrandedClaim`. `claimUsdg` does not harvest, and there is no public `harvest()` function.
 
 The checkpoint cannot see premium from a fill in the same transaction whose USDG has not landed yet. That is why reason 1 of the deposit gate refuses any deposit after a fill in the same transaction.
 
@@ -198,7 +200,7 @@ netUsdg == grossUsdg - feeUsdg
 
 For a checkpoint `Harvest`, or a close where `usdgFromAssignment == 0`, this reduces to `feeUsdg == floor(grossUsdg * protocolFeeBps / 10_000)`.
 
-**Worked example, from a fork rehearsal.** The production keeper ran against an anvil fork of chain 4663 on 2026-09-14 (`keeper/DRYRUN.md` in the app repository, week 2). Strike 223 USDG, unit price 0.856189 USDG, two fills of 2 and 3 contracts, a deposit while `Listed` that checkpointed the premium, then 2 contracts exercised:
+**Worked example, from a fork rehearsal.** The keeper, before vol pricing, ran against an anvil fork of chain 4663 on 2026-09-15 UTC (`keeper/DRYRUN.md` in the app repository, week 2). Strike 223 USDG, unit price 0.856189 USDG, two fills of 2 and 3 contracts, a deposit while `Listed` that checkpointed the premium, then 2 contracts exercised:
 
 ```
 fills                          1.712378 + 2.568567 = 4.280945 USDG premium
@@ -347,7 +349,7 @@ completeRedeem (later)     _materializeStrand(owner): the staged WAD becomes
 
 **Zero dust, by construction.** A generation's epoch shares sum to exactly `1e18 − strandedRemainingWad`, an epoch's owner shares sum to exactly the epoch's share, and the last owner of a generation takes exactly what its `assetsLeft` / `usdgLeft` still hold. The floors of the others sum to at most those amounts, so the last slice is never short.
 
-**Worked example, from a fork rehearsal.** Week 3 of the same keeper fork rehearsal (`keeper/DRYRUN.md`, 2026-09-14), strike 239 USDG, with 16 shares outstanding:
+**Worked example, from a fork rehearsal.** Week 3 of the same keeper fork rehearsal (`keeper/DRYRUN.md`, run 2026-09-15 UTC), strike 239 USDG, with 16 shares outstanding:
 
 ```
 fills                          2 contracts written and sold; 12.4 NVDA idle after the fill

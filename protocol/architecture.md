@@ -1,11 +1,11 @@
 # Architecture
 
-Stonkhouse is one non-upgradeable vault contract on Robinhood Chain (chain id 4663). It pools NVDA Stock Tokens and runs a weekly covered call on them. Each week it arms a Valorem call option type, lists those calls on Seaport 1.6 as an order whose zone is the vault itself, and writes calls into Valorem only when a buyer fills, exactly the number bought. The USDG premium is paid to shareholders through a per-share index. Off-chain services support it: a keeper, an indexer, a web app with the fill page, and a small alert relay. None of them holds or can move depositor funds.
+Stonkhouse is one non-upgradeable vault contract on Robinhood Chain (chain id 4663). It pools NVDA Stock Tokens and runs a weekly covered call on them. Each week it arms a Valorem call option type, lists those calls on Seaport 1.6 as an order whose zone is the vault itself, and writes calls into Valorem only when a buyer fills, exactly the number bought. The USDG premium is paid to shareholders through a per-share index. Off-chain services support it: a keeper, an indexer, and a web app whose cycle page is the only venue for the vault's calls. None of them holds or can move depositor funds.
 
 This page covers the components, the Seaport zone hooks, the phase machine, and the behaviours that integrators most often misread. Money maths is on [Accounting](accounting.md), permissions are on [Roles and admin powers](roles.md), and addresses are on [Contracts and addresses](addresses.md).
 
 {% hint style="warning" %}
-The vault is not deployed yet and is unaudited: no external security firm has reviewed it. See [Security and audits](security.md).
+The vault is live on Robinhood Chain (deployed 2026-09-15) and has had no external audit. Its admin is one hot key with no timelock. See [Security and audits](security.md) and [Contracts and addresses](addresses.md).
 {% endhint %}
 
 Source paths on this page refer to the `callhouse-contracts` repository (`src/`, `script/`, `test/`) unless marked as the app repository. Where the prose and the code disagree, the code is the specification.
@@ -42,13 +42,13 @@ Source paths on this page refer to the `callhouse-contracts` repository (`src/`,
             reprices the listing, serves the order at /orders, locks the
             book, closes the week, settles the queue, retries a strand
    indexer  reads events, serves the public cycle history (read-only API)
-   web app  builds transactions the user signs; the fill page is the venue
-   relay    forwards keeper alerts to Discord or Telegram (no vault keys)
+   web app  builds transactions the user signs; the cycle page is the venue
+            and has the Exercise card for holders of the week's calls
 ```
 
 ### The vault and what it inherits
 
-`Vault` is the only contract Stonkhouse deploys for the product, apart from its two linked libraries and, at launch, its own Valorem clearinghouse instance (see [The clearinghouse](#the-clearinghouse-is-a-deploy-time-choice)). It is an ERC-20 share token (the deploy script's default name and symbol are `Callhouse NVDA` / `cNVDA`, with 18 decimals; the name was set before the product was renamed to Stonkhouse). It also uses OpenZeppelin `AccessControl` and `ReentrancyGuard`, and it inherits three abstract bases:
+`Vault` is the only contract Stonkhouse deploys for the product, apart from its two linked libraries and its own Valorem clearinghouse instance (see [The clearinghouse](#the-clearinghouse-is-a-deploy-time-choice)). It is an ERC-20 share token: on chain `name()` is `Callhouse NVDA` and `symbol()` is `cNVDA`, with 18 decimals, set before the product was renamed Stonkhouse. It also uses OpenZeppelin `AccessControl` and `ReentrancyGuard`, and it inherits three abstract bases:
 
 | Base | Job |
 |---|---|
@@ -56,7 +56,7 @@ Source paths on this page refer to the `callhouse-contracts` repository (`src/`,
 | `AdapterValorem` | Records each fill's write, redeems the claim, and reads the live position (`lockedAssets`, `claimedExerciseProceeds`, `contractsAssigned`). Its ERC-1155 receiver accepts only mints from the clearinghouse. |
 | `AdapterSeaport` | The listing lifecycle (approve, cancel, invalidate), the per-cycle budget of three listings, and the one-time ERC-1155 approval to Seaport. |
 
-These are inherited rather than deployed separately because the external protocols check the caller's identity. Valorem mints the claim NFT to `msg.sender` and `redeem` reverts for anyone who does not own it. Seaport accepts `validate` and `cancel` only from the order's offerer, and calls the zone hooks on the zone. The code therefore has to run as the vault (`src/AdapterValorem.sol`, `src/AdapterSeaport.sol` NatSpec).
+These are inherited rather than deployed separately because the external protocols check the caller's identity. Valorem mints the claim NFT to `msg.sender` and `redeem` reverts for anyone who does not own it. Seaport accepts `cancel` only from the order's offerer or zone, and `validate` from the offerer or with the offerer's signature, and it calls the zone hooks on the zone. The vault cannot sign. The code therefore has to run as the vault (`src/AdapterValorem.sol`, `src/AdapterSeaport.sol` NatSpec).
 
 ### Libraries
 
@@ -70,25 +70,25 @@ Because the linked libraries run by `DELEGATECALL`, `address(this)` inside them 
 
 ### Contract size and the chain's code limit
 
-Robinhood Chain enforces a **98,304 byte** contract code limit, not the 24,576 bytes of EIP-170 (verified with `eth_call --create` probes: 98,304 bytes deploy, 98,305 bytes fail; `README.md` item 1). The vault's runtime is above 24,576 bytes (25,775 bytes at commit `bec4dbd`, `README.md` item 1) and deploys on 4663. `foundry.toml` sets `code_size_limit = 98304`, and a local anvil fork needs `--code-size-limit 98304` or it refuses the vault. The libraries are kept as separate contracts because each has its own `Verify.s.sol` check and a smaller vault is a smaller review surface, not because of size (`src/lib/SeaportOrderLib.sol` NatSpec). The contracts are not portable to an EIP-170 chain without another extraction.
+Robinhood Chain enforces a **98,304 byte** contract code limit, not the 24,576 bytes of EIP-170 (verified with `eth_call --create` probes: 98,304 bytes deploy, 98,305 bytes fail; `README.md` item 1). The vault's runtime is above 24,576 bytes (25,775 bytes, both at commit `bec4dbd` and on chain) and is deployed on 4663. `foundry.toml` sets `code_size_limit = 98304`, and a local anvil fork needs `--code-size-limit 98304` or it refuses the vault. The libraries are kept as separate contracts because each has its own `Verify.s.sol` check and a smaller vault is a smaller review surface, not because of size (`src/lib/SeaportOrderLib.sol` NatSpec). The contracts are not portable to an EIP-170 chain without another extraction.
 
 ### External contracts
 
 | Contract | Role in the system | Trust notes |
 |---|---|---|
-| Valorem Clear | Holds the written collateral, mints the option ERC-1155 and the claim NFT, settles exercise, returns collateral and strike proceeds on `redeem`. The keeper creates each week's option type on it with `newOptionType`, which anyone may call. | The vault is the writer and keeps its own claim NFT. Assignment is pro rata by amount written across every writer of the option id, not by who sold. Because the vault writes only what it sells, it can be assigned on at most the contracts it sold (`src/AdapterValorem.sol` NatSpec). The clearinghouse has no owner, no pause and no proxy; its one privileged key, `feeTo`, holds the 15 bps engine fee switch. |
+| Valorem Clear | Holds the written collateral, mints the option ERC-1155 and the claim NFT, settles exercise, returns collateral and strike proceeds on `redeem`. The keeper creates each week's option type on it with `newOptionType`, which anyone may call. | The vault is the writer and keeps its own claim NFT. Assignment is pro rata by amount written across the writers in a bucket (every write before the option's first exercise shares one), not by who sold. Because the vault writes only what it sells, it can be assigned on at most the contracts it sold (`src/AdapterValorem.sol` NatSpec). The clearinghouse has no owner, no pause and no proxy; its one privileged key, `feeTo`, holds the 15 bps engine fee switch. |
 | Seaport 1.6 | The marketplace. The vault is both the offerer and the zone of its listing. | Listings are authorised on chain: `approveListing` calls `seaport.validate`, so a fill needs no signature. Seaport calls the vault's `authorizeOrder` before any transfer and `validateOrder` after all transfers, on every fulfilment path. The conduit key is zero (`script/Deploy.s.sol`), so the vault approves Seaport itself for the option ERC-1155, once, in the constructor. Seaport has no admin, no proxy and no fee switch. |
 | USDG | Premium and strike currency, 6 decimals. | Third-party upgradeable proxy. Its issuer can pause it and freeze addresses instantly; in an assigned week, a pause or a freeze of the vault or the clearinghouse strands the week's close rather than blocking it (see [Stranded claims](#stranded-claims)). |
 | NVDA Stock Token | The underlying asset, 18 decimals. | Third-party beacon proxy. The vault probes `oraclePaused()` before an arm, a listing and every fill, and reads `uiMultiplier()` for display only. |
-| Chainlink RHNVDA/USD | Spot price for the strike band and the premium floor, and for display. | Read only in `rollOpen`, `approveListing`, every fill (`authorizeOrder`) and the `spotUsdg()` view. Redemption, harvest, the redeem queue, `rollClose` and `retryStrandedClaim` never read a price. An arm, a listing or a fill is refused if the answer is older than `maxPriceAge` (4 days at launch, bounded in bytecode to 1 hour through 7 days). |
+| Chainlink RHNVDA/USD | Spot price for the strike band and the premium floor, and for display. | Read only in `rollOpen`, `approveListing`, every fill (`authorizeOrder`) and the `spotUsdg()` view. Redemption, harvest, the redeem queue, `rollClose` and `retryStrandedClaim` never read a price. An arm, a listing or a fill is refused if the answer is older than `maxPriceAge` (live: 345,600 seconds, 4 days; bounded in bytecode to 1 hour through 7 days). |
 
 Addresses for all of these are on [Contracts and addresses](addresses.md).
 
 ### The clearinghouse is a deploy-time choice
 
-The vault takes its clearinghouse as a constructor argument and reads every option fact it needs from it (`src/Vault.sol` `Config`). `script/Deploy.s.sol` accepts any instance whose `feeBps()` is 15, whose fee switch is off and which is ERC-1155. `script/DeployClear.s.sol` deploys a Stonkhouse-owned instance from the vendored upstream Valorem artifact (commit `6436c823`), with `feeTo` set to the address passed as `CLEAR_FEE_TO`: the vault admin, in the launch plan.
+The vault takes its clearinghouse as a constructor argument and reads every option fact it needs from it (`src/Vault.sol` `Config`). `script/Deploy.s.sol` accepts any instance whose `feeBps()` is 15, whose fee switch is off and which is ERC-1155.
 
-**The launch plan uses Stonkhouse's own instance** (`SECURITY.md` §3; the internal review of 2026-09-14, finding I-01). One consequence is that the vault admin holds both ends of the Valorem engine fee: the switch on the clearinghouse and `acceptValoremFee` on the vault. That is covered on [Roles and admin powers](roles.md#the-valorem-engine-fee-on-our-own-clearinghouse) and [Security and audits](security.md#what-each-key-compromise-buys).
+**The live vault uses Stonkhouse's own instance**, `vault.clear()` = `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`, deployed by the admin EOA. Its runtime is identical to upstream Valorem at commit `6436c823` except for the metadata hash, and it is not source-verified (see [Contracts and addresses](addresses.md#source-verification)). Its `feeTo`, which holds the engine fee switch, is a 1-of-1 Safe (`0xff14…CF61`), not the vault admin; the admin holds `acceptValoremFee` on the vault. That split is covered on [Roles and admin powers](roles.md#the-valorem-engine-fee-on-our-own-clearinghouse) and [Security and audits](security.md#what-each-key-compromise-buys).
 
 ### Not upgradeable
 
@@ -96,14 +96,16 @@ There is no proxy, no `delegatecall` to a mutable target, no rescue function and
 
 ## How a week works on chain
 
-1. **The keeper creates the option type.** It calls `clear.newOptionType(NVDA, 1e18, USDG, strike, exerciseTs, expiryTs)`. The keeper picks the strike about 5% above spot, rounded to a whole USDG, and the exercise time at the NYSE Friday close (see [Timing](#timing)). Anyone can create an option type; the vault trusts nothing about it until the next step.
+1. **The keeper creates the option type.** It calls `clear.newOptionType(NVDA, 1e18, USDG, strike, exerciseTs, expiryTs)`. It sets the exercise time at the NYSE Friday close (see [Timing](#timing)) and picks the strike from Cboe's delayed NVDA option quotes (see [Off-chain services](#off-chain-services)). Anyone can create an option type; the vault trusts nothing about it until the next step.
 2. **`rollOpen(optionId)` arms the week and writes nothing.** The vault reads the option tuple back from the clearinghouse, checks it (see [Transitions](#transitions)), snapshots the strike and window, and moves to `Listed`. `RollOpen.contractsCount` is always 0.
-3. **`approveListing(components)` authorises one Seaport order** sized to the vault's remaining capacity. The vault checks every field, then calls `seaport.validate`. The order is served by the keeper at `/orders` and filled through the web app's fill page or any Seaport 1.6 client.
+3. **`approveListing(components)` authorises one Seaport order** sized to the vault's remaining capacity. The vault checks every field, then calls `seaport.validate`. The order is served by the keeper at `/orders` and filled through the app's cycle page or any Seaport 1.6 client that has the order.
 4. **Every fill is a write.** Seaport calls the vault's `authorizeOrder`, which re-checks the price floors at live spot and writes exactly the contracts being bought into Valorem. Seaport moves them to the buyer and the USDG to the vault. `validateOrder` then confirms nothing stayed behind.
 5. **At `cycleExerciseTs`,** deposits and fills close, anyone can call `lockBook`, and Valorem opens exercise.
 6. **After `cycleExpiryTs`,** `rollClose` redeems the claim (if anything sold), harvests the premium, settles the redeem queue, and returns the vault to `Idle`.
 
-In a fork rehearsal of the production keeper on 2026-09-14 (an anvil fork of chain 4663 at block 63,348,605, with the price feed mocked at the live Chainlink answer; `keeper/DRYRUN.md` in the app repository), spot was 211.93 USDG, the keeper created a 223 USDG strike for its second week (the 2026-09-25 16:00 ET close), listed 14 contracts at 0.856189 USDG each, and two buyers filled 2 and 3. The vault wrote exactly 5 and held no option tokens after either fill.
+On chain, week 1 was armed on 2026-09-15 at a strike of 223 USDG, with exercise opening Friday 2026-09-18 20:00 UTC (16:00 ET) and expiry Saturday 2026-09-19 20:00 UTC. The keeper has used two of the week's three listings: the first was cancelled, and the second offers 1 contract at 0.856436 USDG. As of 2026-09-15 nothing has sold (`contractsWritten` is 0). Both listings were priced by the keeper as it was before vol pricing.
+
+In a fork rehearsal of that earlier keeper on 2026-09-15 UTC (an anvil fork of chain 4663 at block 63,348,605, with the price feed mocked at the live Chainlink answer; `keeper/DRYRUN.md` in the app repository), spot was 211.93 USDG, the keeper created a 223 USDG strike for its second week (the 2026-09-25 16:00 ET close), listed 14 contracts at 0.856189 USDG each, and two buyers filled 2 and 3. The vault wrote exactly 5 and held no option tokens after either fill.
 
 ## The Seaport zone hooks
 
@@ -137,9 +139,9 @@ Seaport calls it after every transfer of the fill. It reverts unless the caller 
 ### What this guarantees, and what it does not
 
 - **Written equals sold.** Nothing is written at `rollOpen`, each fill writes exactly what Seaport moves to the buyer, and a fill that leaves anything behind reverts. `invariant_vaultHoldsNoOptionTokens` and `invariant_assignedNeverExceedsSold` assert this after every call of the stateful suite.
-- **The vault can never be assigned on more than it sold.** Valorem assigns pro rata by amount written across every writer of an id, so a third party writing into the vault's series and exercising can assign the vault at most the calls it was paid for (`test/regression/AF01_UnsoldInventory.t.sol`, on the real Clear bytecode).
+- **The vault can never be assigned on more than it sold.** Valorem assigns pro rata by amount written across the writers in a bucket, and every write before an option's first exercise shares one bucket, so a third party writing into the vault's series and exercising can assign the vault at most the calls it was paid for (`test/regression/AF01_UnsoldInventory.t.sol`, on the real Clear bytecode).
 - **The vault never calls a Seaport fulfil function.** Seaport exempts only the zone itself from the hooks, and the vault never fills, so every fill runs through them.
-- **A fill can be refused after a rally.** The floors are re-derived at the spot of the fill's block. The keeper then reprices, within the vault's three listings a week. Inside `fulfillAvailableAdvancedOrders` a refused hook skips the vault's order and the buyer's other orders still fill; on every other path the fill reverts.
+- **A fill can be refused after a rally.** The floors are re-derived at the spot of the fill's block. The keeper then reprices, within the vault's three listings a week. Inside `fulfillAvailableOrders` and `fulfillAvailableAdvancedOrders` a refused hook skips the vault's order and the buyer's other orders still fill; on every other path the fill reverts.
 - **Not a price guarantee.** The floors are minimums set by policy. They do not make a sale fair value (see [Security and audits](security.md#what-each-key-compromise-buys)).
 
 ## The phase machine
@@ -207,7 +209,7 @@ While a claim is stranded (`src/Vault.sol` stranded-claim section):
 - `queueRedeem`, `settleQueue`, `completeRedeem` and `claimUsdg` are not blocked by the strand itself, though any leg that moves a token still needs that token to be transferable. A queue that settles pays its slice of the idle NVDA now, and its pro-rata share of the claim once the claim is redeemed.
 - Anyone can call `retryStrandedClaim()`. It reverts `StillStranded` while the cause persists and settles the claim the first time Valorem lets it through.
 
-The fork rehearsal on 2026-09-14 ran this path against the real USDG: after a week with 2 contracts sold and 1 exercised, USDG's freeze role froze the vault, `rollClose` stranded the claim, a retry reverted `StillStranded`, and the retry after the unfreeze redeemed 1 NVDA and 239 USDG (`keeper/DRYRUN.md` in the app repository). The maths is on [Accounting](accounting.md#stranded-claims).
+The fork rehearsal on 2026-09-15 UTC ran this path against the real USDG: after a week with 2 contracts sold and 1 exercised, USDG's freeze role froze the vault, `rollClose` stranded the claim, a retry reverted `StillStranded`, and the retry after the unfreeze redeemed 1 NVDA and 239 USDG (`keeper/DRYRUN.md` in the app repository). The maths is on [Accounting](accounting.md#stranded-claims).
 
 ### What each phase allows
 
@@ -235,10 +237,10 @@ The fork rehearsal on 2026-09-14 ran this path against the real USDG: after a we
 2. The phase is not `Idle` or `Listed`.
 3. The phase is `Listed` and `block.timestamp >= cycleExerciseTs`.
 4. A claim is open and either the vault is `Idle` (stranded) or the claim holds unredeemed assignment proceeds (`claimedExerciseProceeds() != 0`).
-5. The vault's NVDA balance is below `reservedAssets`, which only an issuer burn (or a Valorem fee past the utilisation ceiling) can cause.
+5. The vault's NVDA balance is below `reservedAssets`, which only an issuer burn can cause: a fill whose write would leave the balance there reverts `ReserveBreached`.
 6. The share price is below the compiled floor: `totalSupply() > totalAssets() × 1,000,000`.
 
-Separately, a deposit that would take `totalAssets()` past `depositCap` reverts `DepositCapExceeded`, and `maxDeposit` is capped at `depositCap - totalAssets()`. The launch cap is 20 NVDA (`script/Deploy.s.sol` `LAUNCH_DEPOSIT_CAP`). A halt does not close deposits.
+Separately, a deposit that would take `totalAssets()` past `depositCap` reverts `DepositCapExceeded`, and `maxDeposit` is capped at `depositCap - totalAssets()`. The live cap is 20 NVDA (`depositCap()`), and the admin can change it at any time with `setDepositCap`. A halt does not close deposits.
 
 **A halt** (`writesHalted`) is checked in `rollOpen`, `approveListing` and every fill (`authorizeOrder`), and nowhere else. See [Roles and admin powers](roles.md#guardian_role).
 
@@ -251,6 +253,7 @@ The keeper chooses them (`keeper/src/calendar.ts` in the app repository):
 - **Exercise:** the next NYSE Friday close, 16:00 America/New_York. That is 20:00 UTC while US daylight saving time is in effect and 21:00 UTC otherwise (daylight saving ends 2026-11-01). When the Friday is a full-day NYSE holiday, the close moves back to Thursday 16:00 ET.
 - **Expiry:** 24 hours after exercise.
 - **Lead:** if the next close is closer than the keeper's arm lead (6 hours by default), it uses the following Friday.
+- **Not modelled:** NYSE early closes (the day after Thanksgiving, Christmas Eve) still get a 16:00 ET exercise time, and the built-in holiday table covers 2026 and 2027 only.
 
 The arm gate accepts any option type whose exercise is at least 1 hour away, whose window is at least 1 day, and whose expiry is at most 21 days away, so both a normal week and a holiday week fit. Valorem allows `exercise` while `exerciseTimestamp <= now < expiryTimestamp` and `redeem` from `expiryTimestamp` on, so the two windows meet with no gap. Fills and deposits close at `cycleExerciseTs`, the same second exercise opens. The depositor-level view of the cycle is on [The weekly cycle](../product/weekly-cycle.md).
 
@@ -258,10 +261,11 @@ The arm gate accepts any option type whose exercise is at least 1 hour away, who
 
 **Keeper.** A Node process holding a hot EOA with `KEEPER_ROLE` and gas, nothing else (`keeper/README.md` in the app repository). Each week it:
 
+- picks the strike and price from Cboe's free delayed NVDA option chain (vol mode, the default and the mode production runs). The strike is where a call's delta is about 0.15 (`KEEPER_TARGET_DELTA`, default 0.15), interpolated between listed strikes on the calls expiring on the close day, rounded to a whole USDG, then clamped to between `minOtmBps + 200` and `maxOtmBps − 50` basis points above spot: 5% to 11.5% under the live policy. The ask per contract is the larger of the vault's premium floor raised by 0.5% of itself (`KEEPER_PREMIUM_MARGIN_BPS` = 50 in production; the code default is 100) and the quotes' mid-price fair value plus 10%, never above the strike. Missing, stale or inconsistent data skips the week: the keeper never falls back to a fixed formula
 - creates the option type on the clearinghouse, or reuses it if the same tuple already exists
-- calls `rollOpen`, then `approveListing` at the vault's full capacity, priced 1% above the premium floor by default
-- serves the order at `/orders` for the fill page, with an empty signature
-- every tick, mirrors the fill gate at live spot and reprices (cancel, then approve again) when a rally has pushed the price under the floor, within the three listings a week
+- calls `rollOpen`, then `approveListing` at the vault's full capacity
+- serves the order at `/orders` for the cycle page, with an empty signature and the pricing inputs it used
+- every tick, mirrors the fill gate at live spot and reprices (cancel, then approve again) when a rally has pushed the price under the floor, and, at most every 30 minutes, reprices up when fresh quotes put the market ask more than `KEEPER_VOL_REPRICE_UP_BPS` (25% by default) above the live ask and a listing slot would remain afterwards, all within the three listings a week
 - calls `lockBook` at the exercise time and `rollClose` at expiry
 - calls `settleQueue` when the vault is `Idle` with shares queued, and `retryStrandedClaim` on a timer (hourly by default) while a claim is stranded
 
@@ -269,9 +273,11 @@ The keeper only proposes. The vault re-checks every field against its own state 
 
 **Indexer.** A Ponder indexer (`indexer/README.md` in the app repository). It reads vault, Valorem, Seaport and Stock Token events and serves a read-only JSON API: `/v1/vault`, `/v1/cycles`, `/v1/cycles/:cycle`, `/v1/activity`, `/v1/account/:addr`, `/v1/listings`, `/v1/listings/:hash`, `/v1/strands`, `/v1/snapshots` and `/v1/health`. A week nobody bought is published as a row of zeros, not left out. The week's size is the sum of its `CallsWritten` events, stranded weeks and their recovery are published, and premium is kept separate from strike proceeds. It holds no keys that can act on the vault.
 
-**Web app and the fill page.** A Next.js app at `app.stonkhouse.fun` (`web/README.md` in the app repository). Deposits, queued withdrawals, redemptions, claims, settling the queue and retrying a stranded claim are all transactions the user signs in their own wallet. The fill page, `/vault/nvda/cycle`, is the venue for the vault's calls. Its server route fetches the keeper's `/orders` and serves an order only if it rebuilds to the vault's own `listingHash` on chain. The page then simulates the exact fill with `eth_call`, shows a decoded refusal if the vault would refuse it, and fills with a USDG approval to Seaport followed by `fulfillAdvancedOrder`. Any other Seaport 1.6 client can fill the same order. The app has no custody, no private keys and no server-side signing.
+**Web app and the cycle page.** A Next.js app at `app.stonkhouse.fun` (`web/README.md` in the app repository). Deposits, queued withdrawals, redemptions, claims, settling the queue and retrying a stranded claim are all transactions the user signs in their own wallet. The cycle page, `/vault/nvda/cycle`, is the only venue for the vault's calls. Its server route fetches the keeper's `/orders` and serves an order only if it rebuilds to the vault's own `listingHash` on chain. The page then simulates the exact fill with `eth_call`, shows a decoded refusal if the vault would refuse it, and fills with a USDG approval to Seaport followed by `fulfillAdvancedOrder`. It also offers the raw order for any other Seaport 1.6 client. The app has no custody, no private keys and no server-side signing.
 
-**Alert relay.** A small HTTP service (`relay/` in the app repository) with `GET /health` and `POST /alert`. The keeper sends its alerts there with a shared bearer token; the relay forwards them to Discord and/or Telegram. It holds no vault keys and cannot act on the vault.
+**The Exercise card.** On the same page, a connected wallet that holds the week's option (the Clear's ERC-1155 id `vault.optionId()`) sees an Exercise card. It shows the wallet's option balance, the strike, the NVDA received per contract and exact USDG totals. The Exercise button is enabled only inside the Clear's exercise window, from the option's `exerciseTimestamp` up to its `expiryTimestamp`. The window is judged by the latest block's timestamp. The holder picks a number of contracts up to their balance, and the card simulates `exercise(optionId, amount)` from the wallet: the button stays off while the simulation says the Clear would refuse, the wallet's USDG is short or a token would not move, and stays on when only the approval is missing or the result is inconclusive (with a warning). On click the app simulates again; only if the wallet's USDG allowance to the Clear is below the total (the strike cost plus the Clear's engine fee, zero while that is off) does it send `approve` for exactly the total and simulate once more; then it calls `exercise(optionId, amount)` on the Clear. When `spotUsdg() × NVDA out <= total × 10^18`, or spot is stale or unreadable, it warns and requires explicit confirmation. Before the window it shows when exercise opens, in UTC and US Eastern. From expiry until `rollClose` it shows that the options expired worthless; `rollClose` clears `vault.optionId()` unless the claim strands, and the card is not rendered for that option after that. Without the app, a holder can call `exercise(uint256 optionId, uint112 amount)` on the Clear directly, after approving the Clear to take `strike × amount` USDG (plus the fee, if on). The Clear does not check whether the call is in the money.
+
+**Alerts.** The app repository has a small relay service (`relay/`) meant to forward keeper alerts to Discord or Telegram. It is not deployed, and the keeper has no webhook set, so alerts are only written to the keeper's own log and database. Nobody is paged.
 
 The keeper and the indexer do not talk to each other. Each reads the chain independently. The web server reads the keeper only for `/orders` (`docs/WIRING.md` in the app repository).
 
@@ -294,9 +300,9 @@ Each item below was checked against the contract source.
 13. **A stranded close returns normally.** `rollClose` succeeding with `RollClose(cycle, 0, 0, n)` preceded by `ClaimStranded` means the redeem reverted inside USDG or the Stock Token and the vault kept the claim. The week's proceeds are reported later by `ClaimRedeemed` and `StrandedClaimRecovered`.
 14. **`contractsAssigned()` reads 0 after a successful close.** `rollClose` zeroes `claimKey`, and the view returns 0 for a zero key. The historical figure is `RollClose.contractsAssignedCount`, read inside the close before redemption. On a stranded close the claim is kept, so the view still reads it until the retry.
 15. **`listingHash` is not a "live and fillable" flag.** It is cleared only by `cancelListing`, `invalidateAllListings`, `lockBook` and `rollClose`, and a fill, even a full one, does not clear it. While it is non-zero, a new `approveListing` reverts `PreviousListingLive`. Use Seaport's `getOrderStatus` for fill state.
-16. **There is no signature.** The vault has no signing key and implements no EIP-1271 hook; `supportsInterface` advertises the ERC-1155 receiver and the Seaport zone interface only. A fill passes an empty signature because `approveListing` pre-validated the order on Seaport.
+16. **There is no signature.** The vault has no signing key and implements no EIP-1271 hook; `supportsInterface` advertises the ERC-1155 receiver, the Seaport zone interface, and OpenZeppelin's `IAccessControl` and ERC-165, not EIP-1271. A fill passes an empty signature because `approveListing` pre-validated the order on Seaport.
 17. **The Seaport counter is re-read, never predicted.** `approveListing` requires the order's `counter` to equal `seaport.getCounter(vault)` at approval time. `lockBook`, `rollClose` and `invalidateAllListings` kill orders by `incrementCounter`, which does not mark individual orders cancelled. Seaport's counter increments by a quasi-random amount, not by one (`docs/ARCHITECTURE.md` §8 in the app repository).
-18. **A stale price at the weekend is expected.** The RHNVDA/USD feed follows US equity market hours and stops updating while the market is shut. `maxPriceAge` is 4 days at launch so weekend arms and fills are not blocked. The feed is never read on a settlement path.
+18. **A stale price at the weekend is expected.** The RHNVDA/USD feed is a 24/5 feed: it stops updating from around the Friday close until Sunday 20:00 ET, and over market holidays. `maxPriceAge` is 4 days on the live vault so weekend arms and fills are not blocked. The feed is never read on a settlement path.
 19. **A queue entry can settle without a payout.** `queueRedeem`, when it finds an older settled entry, moves it into `owedAssets` / `owedQueueUsdg` and emits `QueueEntrySettled`, without moving tokens. `CompleteRedeem` reports only payouts. Draw epoch balances down on `QueueEntrySettled`.
 20. **Shares sent directly to the vault address are not a withdrawal request, and they are lost to the sender.** `_update` accepts the transfer, but only `queueRedeem` creates a queue entry. Those shares are never burned and never paid out: they stay in `totalSupply()`, so the NVDA behind them stays in the vault and nobody can redeem it. The USDG they accrue is credited to the vault's escrow account and swept into the next queue settlement's pot, where it goes to that epoch's last claimant (`docs/ACCOUNTING.md` §5). The equality `queuedShares == balanceOf(vault)` no longer holds after such a transfer.
 21. **The vault refuses ERC-1155 transfers it did not mint.** Both receiver hooks return `0x00000000` unless the caller is the clearinghouse and the transfer is a mint (`from == address(0)`), so nobody can push option tokens or a claim NFT into the vault.
