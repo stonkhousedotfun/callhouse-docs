@@ -14,7 +14,7 @@ Idle ──rollOpen──► Listed ──lockBook──► Exercisable ──ro
 The vault has no calendar of its own and reads nobody else's. Each week the keeper creates the option type itself, and that type's exercise and expiry timestamps are the week's deadlines. When the vault arms, it checks those timestamps against bounds compiled into the contracts and copies them, so a cycle keeps its own deadlines whatever happens later.
 
 {% hint style="info" %}
-**The weekly times are US Eastern Time.** By default the keeper sets exercise at the NYSE Friday close, 16:00 America/New_York, and expiry 24 hours later. That is 20:00 UTC while US daylight saving time is in force, and 21:00 UTC after it ends on 1 November 2026 (it starts again on 14 March 2027). When the Friday is a full-day NYSE holiday, exercise moves back to the previous session's close: Thursday 16:00 ET, or Wednesday if Thursday is closed too. Early-close days are not modelled, so their timestamp stays at 16:00 ET. These are the keeper's choices. The vault enforces only the bounds listed below.
+**The weekly times are US Eastern Time.** By default the keeper sets exercise at the NYSE Friday close, 4:00pm America/New_York, and expiry 24 hours later. That is 8:00pm UTC while US daylight saving time is in force, and 9:00pm UTC after it ends on 1 November 2026 (it starts again on 14 March 2027). When the Friday is a full-day NYSE holiday, exercise moves back to the previous session's close: Thursday 4:00pm ET, or Wednesday if Thursday is closed too. Early-close days are not modelled, so their timestamp stays at 4:00pm ET. These are the keeper's choices. The vault enforces only the bounds listed below.
 {% endhint %}
 
 {% hint style="info" %}
@@ -25,11 +25,11 @@ The keeper's built-in holiday table covers 2026 and 2027. The Friday holidays in
 
 | Friday holiday | Exercise instead |
 |---|---|
-| 25 December 2026 (Christmas) | Thursday 24 December 2026, 16:00 ET |
-| 1 January 2027 (New Year's Day) | Thursday 31 December 2026, 16:00 ET |
-| 26 March 2027 (Good Friday) | Thursday 25 March 2027, 16:00 ET |
-| 18 June 2027 (Juneteenth, observed) | Thursday 17 June 2027, 16:00 ET |
-| 24 December 2027 (Christmas, observed) | Thursday 23 December 2027, 16:00 ET |
+| 25 December 2026 (Christmas) | Thursday 24 December 2026, 4:00pm ET |
+| 1 January 2027 (New Year's Day) | Thursday 31 December 2026, 4:00pm ET |
+| 26 March 2027 (Good Friday) | Thursday 25 March 2027, 4:00pm ET |
+| 18 June 2027 (Juneteenth, observed) | Thursday 17 June 2027, 4:00pm ET |
+| 24 December 2027 (Christmas, observed) | Thursday 23 December 2027, 4:00pm ET |
 
 For later years the keeper operator has to supply the dates.
 
@@ -55,7 +55,7 @@ Anyone can create a Valorem option type with `newOptionType`, and a type's terms
 | Contract size | 1 NVDA | Exactly 1 NVDA |
 | Exercise asset | USDG | Must be USDG |
 | Strike | From Cboe's delayed NVDA option quotes: the call with a delta of about 0.15, rounded to a whole USDG, kept 5% to 11.5% above spot under the current band | At live spot, inside the band: at least 3% and at most 12% above (current policy), both bounds checked |
-| Exercise timestamp | The next NYSE Friday close, 16:00 ET, at least 6 hours away | At least 1 hour after the `rollOpen` |
+| Exercise timestamp | The next NYSE Friday close, 4:00pm ET, at least 6 hours away | At least 1 hour after the `rollOpen` |
 | Expiry timestamp | Exercise plus 24 hours | At least 1 day after exercise, and at most 21 days after the `rollOpen` |
 
 An option id is a pure function of those six fields. If the type already exists, for example from an earlier attempt, the keeper reuses it rather than creating it again.
@@ -110,7 +110,7 @@ For cycle 1 (strike 223 USDG, 0.856436 USDG per contract) under the current poli
 
 The contracts set the bounds. Inside them, the keeper software (`keeper/src/calendar.ts`, `keeper/src/vol.ts`, `keeper/src/policy.ts`, `keeper/src/roll.ts` and `keeper/src/config.ts` in the app repository) makes these choices with the settings it runs in production. They are operating choices, not commitments: whoever runs the keeper can change them in its configuration, without a contract change.
 
-* **Window:** the next NYSE Friday close at 16:00 ET, at least 6 hours away (otherwise the Friday after), with expiry 24 hours later.
+* **Window:** the next NYSE Friday close at 4:00pm ET, at least 6 hours away (otherwise the Friday after), with expiry 24 hours later.
 * **Market data:** Cboe's free, delayed NVDA option chain, fetched once per decision. It must be for NVDA, dated within 4 days, and from the latest NYSE session that has closed. Missing, stale or inconsistent data skips the week with a named reason; the keeper never falls back to another way of pricing.
 * **Strike:** the strike of the listed call expiring on the week's close day with a delta of 0.15, interpolated between the two listed strikes around it, converted to the token's price and rounded to a whole USDG, then kept at least 2 percentage points above the band floor and 0.5 points below its ceiling: 5% to 11.5% above spot under the current band. When no such strike can be found, the keeper arms nothing; it looks again on each tick until that Friday's close is less than 6 hours away, and then moves on to the following Friday.
 * **Size:** the vault's whole remaining capacity, in one listing.
@@ -123,9 +123,9 @@ The contracts set the bounds. Inside them, the keeper software (`keeper/src/cale
 * **Stranded claim:** no new week is armed; the keeper tries `retryStrandedClaim()` every hour, simulating it first so a failed attempt costs no gas, and records an alert.
 * **Alerts:** the keeper logs its alerts and stores them in its database. They are not delivered to anyone today: no alert webhook or relay is running.
 
-On the live vault, the keeper created cycle 1's option type and armed it on 15 September 2026: a 223 USDG strike, exercise on Friday 18 September at 16:00 ET (20:00 UTC, timestamp 1789761600) and expiry 24 hours later (1789848000). Its first listing was cancelled and replaced the same day, so one of the cycle's three listings is left. Both listings were priced by the keeper version before `vol` mode, from the 0.40% premium floor then in force plus the keeper's margin.
+On the live vault, the keeper created cycle 1's option type and armed it on 15 September 2026: a 223 USDG strike, exercise on Friday 18 September at 4:00pm ET (8:00pm UTC, timestamp 1789761600) and expiry 24 hours later (1789848000). Its first listing was cancelled and replaced the same day, so one of the cycle's three listings is left. Both listings were priced by the keeper version before `vol` mode, from the 0.40% premium floor then in force plus the keeper's margin.
 
-In a fork rehearsal of the keeper run on 15 September 2026 (UTC), against a copy of Robinhood Chain with Seaport 1.6, USDG, a Valorem clearinghouse already on the chain with the same code as the vault's, and a test price feed seeded with the real Chainlink print, spot was 211.93 USDG. The keeper ran in fixed-price mode with the 0.40% floor: it created a 223 USDG strike (spot plus 5%) exercising on Friday 18 September at 16:00 ET (20:00 UTC), armed it, and with 25 NVDA in the vault listed 23 contracts at 0.856189 USDG each, against a floor of 0.847711. Those are rehearsal figures, not a forecast.
+In a fork rehearsal of the keeper run on 15 September 2026 (UTC), against a copy of Robinhood Chain with Seaport 1.6, USDG, a Valorem clearinghouse already on the chain with the same code as the vault's, and a test price feed seeded with the real Chainlink print, spot was 211.93 USDG. The keeper ran in fixed-price mode with the 0.40% floor: it created a 223 USDG strike (spot plus 5%) exercising on Friday 18 September at 4:00pm ET (8:00pm UTC), armed it, and with 25 NVDA in the vault listed 23 contracts at 0.856189 USDG each, against a floor of 0.847711. Those are rehearsal figures, not a forecast.
 
 ### Listed → Exercisable: `lockBook`
 

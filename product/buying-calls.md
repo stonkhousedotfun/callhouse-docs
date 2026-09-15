@@ -14,7 +14,7 @@ The vault is live on Robinhood Chain at `0x88a98931E3682137E7e4D3426f623247f4A4e
 |---|---|
 | **Underlying** | 1 NVDA Stock Token per contract |
 | **Strike** | USDG per contract, fixed when the keeper creates the week's option type. The vault requires it to be 3% to 12% above spot when the week is armed (current policy); the keeper's pricing puts it 5% to 11.5% above |
-| **Exercise window** | From the option type's exercise timestamp until its expiry timestamp. The keeper sets exercise at the NYSE close on Friday, 16:00 New York time (Thursday when Friday is an NYSE holiday), and expiry 24 hours later |
+| **Exercise window** | From the option type's exercise timestamp until its expiry timestamp. The keeper sets exercise at the NYSE close on Friday, 4:00pm New York time (Thursday when Friday is an NYSE holiday), and expiry 24 hours later |
 | **Settlement** | Physical, on the clearinghouse: exercising pays the strike in USDG and delivers the NVDA Stock Token |
 | **Form** | An ERC-1155 token on the clearinghouse `0x53d7…C6`, whose id is the week's option type (`vault.optionId()` while the week is open) |
 | **Price** | One USDG price per contract for the whole listing, never above the strike |
@@ -99,7 +99,7 @@ Exercise happens on the clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9
 
 ### The exercise window
 
-The clearinghouse's `exercise` accepts a call only while `exerciseTimestamp <= block.timestamp < expiryTimestamp`, reading both from the option type. Before the window it reverts with `ExerciseTooEarly`; from expiry on it reverts with `ExpiredOption`. For cycle 1 (strike 223 USDG) the window opens at 1789761600, Friday 18 September 2026 20:00 UTC (16:00 ET), and closes at 1789848000, Saturday 19 September 2026 20:00 UTC (16:00 ET). Nothing is exercised automatically: a call not exercised by expiry is worthless.
+The clearinghouse's `exercise` accepts a call only while `exerciseTimestamp <= block.timestamp < expiryTimestamp`, reading both from the option type. Before the window it reverts with `ExerciseTooEarly`; from expiry on it reverts with `ExpiredOption`. For cycle 1 (strike 223 USDG) the window opens at 1789761600, Friday 18 September 2026, 8:00pm UTC (4:00pm ET), and closes at 1789848000, Saturday 19 September 2026, 8:00pm UTC (4:00pm ET). Nothing is exercised automatically: a call not exercised by expiry is worthless.
 
 ### The Exercise card on the cycle page
 
@@ -135,7 +135,7 @@ In the fork rehearsal, with spot set to 228 on the fork, a buyer exercised 2 con
 ## Who can buy, and with what account
 
 * Stonkhouse is not available to US persons, and that includes buying the vault's calls.
-* The app connects browser-extension wallets on Robinhood Chain. It does not support WalletConnect or mobile QR connections.
+* The app connects MetaMask and Phantom on Robinhood Chain. It does not support WalletConnect or mobile QR connections, and other injected wallets are not offered.
 * Your receiving address must accept ERC-1155 tokens. An ordinary wallet does. A contract must implement the ERC-1155 receiver hooks, and an address with an EIP-7702 delegation accepts only what its delegate's code allows; if it refuses, the fill reverts.
 * A contract that fills cannot deposit into the vault in the same transaction. See [Depositing](../getting-started/depositing.md#a-deposit-inside-a-fill-is-refused).
 

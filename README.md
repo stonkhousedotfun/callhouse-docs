@@ -38,7 +38,7 @@ These docs contain no performance figures. Worked examples marked as coming from
 | Where | What it is |
 |---|---|
 | `stonkhouse.fun` | The public site. It explains the product and never asks for a wallet. It carries the Terms of Use (`/terms`), the privacy notice (`/privacy`), the perimeter disclosure and vulnerability reporting (`/legal`), and `/.well-known/security.txt`. |
-| `app.stonkhouse.fun` | The app, configured for the NVDA vault. Depositing, withdrawing and claiming USDG are on `/vault/nvda`. The cycle page, `/vault/nvda/cycle`, is where the vault's calls are bought and exercised. |
+| `app.stonkhouse.fun` | The app. `/` is the product home and does not ask for a wallet. Depositing, withdrawing and claiming USDG are on `/vault/nvda`. The cycle page, `/vault/nvda/cycle`, is where the vault's calls are bought and exercised. |
 | `docs.stonkhouse.fun` | These docs: depositor and buyer documentation and the protocol reference. |
 
 Security reports go to **security@stonkhouse.fun**. See [Security and audits](protocol/security.md#reporting-a-vulnerability). `callhouse.xyz` is not a Stonkhouse domain.
@@ -53,7 +53,7 @@ Everything happens on Robinhood Chain: chain id `4663`, RPC `https://rpc.mainnet
 | NVDA Stock Token, `0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC` (18 decimals) | The amount you deposit | | |
 | USDG, `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` (6 decimals) | | The premium | The strike for each contract |
 
-You also need a browser-extension wallet. The app connects only to injected wallets it discovers in the browser (MetaMask, Rabby, Brave, the Coinbase extension and similar); there is no WalletConnect or mobile QR connection.
+You also need MetaMask or Phantom in the browser. The app's Connect button lists only those two; there is no WalletConnect or mobile QR connection, and other injected wallets are not offered.
 
 The route in the team's own launch runbook: bridge a little ETH to chain 4663, swap ETH for USDG, then swap USDG for NVDA. A Uniswap V3 USDG/NVDA pool is at `0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3` (0.05% fee tier; source verified on Sourcify). Stonkhouse runs no bridge or pool and does not vouch for either. The Stock Tokens are offered outside the United States under their issuer's own terms, and you must be eligible to hold them under those terms.
 

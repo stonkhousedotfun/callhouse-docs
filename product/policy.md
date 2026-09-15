@@ -88,7 +88,7 @@ The vault authorises at most three listings a cycle, one live at a time, and eve
 
 ### Price age: 4 days
 
-The vault refuses to arm a week, authorise a listing or accept a fill if the NVDA price feed is older than this (`StalePrice`). The feed is a 24/5 feed: it can print overnight on weekdays, but it publishes nothing from around the Friday close until Sunday 20:00 ET, or over market holidays, so a limit measured in hours would block every weekend fill and every weekend arm. The compiled bounds of 1 hour to 7 days stop anyone switching the check off. What 4 days does not catch is on [Risks](risks.md#the-price-feed).
+The vault refuses to arm a week, authorise a listing or accept a fill if the NVDA price feed is older than this (`StalePrice`). The feed is a 24/5 feed: it can print overnight on weekdays, but it publishes nothing from around the Friday close until Sunday 8:00pm ET, or over market holidays, so a limit measured in hours would block every weekend fill and every weekend arm. The compiled bounds of 1 hour to 7 days stop anyone switching the check off. What 4 days does not catch is on [Risks](risks.md#the-price-feed).
 
 ### Option type bounds: 1 NVDA, at least 1 hour, at least 1 day, at most 21 days
 

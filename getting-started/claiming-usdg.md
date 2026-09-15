@@ -40,7 +40,7 @@ USDG is not reinvested into NVDA. It waits for you to claim it.
 
 ## Step by step
 
-1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect your wallet.
+1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect MetaMask or Phantom.
 2. The USDG card shows your claimable balance ("Claimable"). This is the vault's own `claimableUsdg` figure read from the chain, not a projection. Because of index rounding it can be a base unit or so above what the claim actually pays (see below).
 3. Choose "Claim … USDG". This calls `claimUsdg()` and sends the full claimable amount to your wallet. The contract also has `claimUsdgTo(address)` if you want it sent to a different address.
 

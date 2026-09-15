@@ -25,7 +25,7 @@ The Withdraw card shows "instant path open" or "queue only" based on the vault's
 
 ### Step by step
 
-1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect your wallet.
+1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect MetaMask or Phantom.
 2. Enter the number of cNVDA shares to redeem. The app shows "Redeem now" when the instant path is open.
 3. Confirm. Your shares burn and NVDA is sent to you in the same transaction.
 
@@ -69,7 +69,7 @@ Once an epoch is settled, your amounts are fixed. You are not diluted by later d
 
 A queued redemption settles at the `rollClose` of the week that is open when you queue. If the vault is Idle when you queue, it settles when anyone calls `settleQueue()`. The keeper settles a queue waiting in an Idle vault before it arms the next week, but that is how the keeper runs, not a rule in the contract: if a week is armed first, your entry waits for that week's close, and your escrowed shares, which still count in the share supply, are exposed to that week like any other.
 
-The keeper can call `rollClose` from expiry, and anyone can call it one hour after expiry, so a stopped keeper cannot hold the queue past the week. The keeper sets expiry 24 hours after the Friday NYSE close, which is Saturday at 16:00 New York time in a normal week; the option's own timestamps, shown in the app, are what count.
+The keeper can call `rollClose` from expiry, and anyone can call it one hour after expiry, so a stopped keeper cannot hold the queue past the week. The keeper sets expiry 24 hours after the Friday NYSE close, which is Saturday at 4:00pm New York time in a normal week; the option's own timestamps, shown in the app, are what count.
 
 A token issuer cannot stop the queue from settling. If the week's claim cannot be redeemed because of a USDG or Stock Token restriction, `rollClose` strands the claim and settles the queue anyway. A halt on writes, a stale price feed or a paused Stock Token oracle does not hold it up either.
 

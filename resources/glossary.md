@@ -38,7 +38,7 @@ One settled batch of queued redemptions. Queued shares are tagged with the curre
 
 ### Exercise timestamp
 
-The moment, fixed in each week's option type, when the sale window closes and the exercise window opens. The keeper sets it at the NYSE close on Friday, 16:00 New York time, or on Thursday when Friday is an NYSE holiday. Listings must end by it, and fills and deposits close at it.
+The moment, fixed in each week's option type, when the sale window closes and the exercise window opens. The keeper sets it at the NYSE close on Friday, 4:00pm New York time, or on Thursday when Friday is an NYSE holiday. Listings must end by it, and fills and deposits close at it.
 
 ### Exercise window
 

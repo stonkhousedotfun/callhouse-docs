@@ -14,13 +14,13 @@ The NVDA vault is live at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`. Total de
 
 * NVDA Stock Tokens (`0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC`) on Robinhood Chain (chain id 4663), and eligibility to hold them under the issuer's own terms.
 * ETH on Robinhood Chain for gas.
-* A browser-extension wallet connected to `app.stonkhouse.fun`. The app has no WalletConnect or mobile QR connection.
+* MetaMask or Phantom, connected to `app.stonkhouse.fun`. The app has no WalletConnect or mobile QR connection, and other injected wallets are not offered.
 
 [What you need](../README.md#what-you-need) has the chain settings and one route to NVDA and ETH on chain 4663.
 
 ## Step by step
 
-1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect your wallet. Switch to Robinhood Chain (4663) if asked.
+1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect MetaMask or Phantom. Switch to Robinhood Chain (4663) if asked.
 2. Enter the amount of NVDA to deposit. The Deposit card shows how much room is left under the deposit cap ("cap headroom") and how many cNVDA the amount buys at the current share price ("You receive"). It does not quote a return. While a week is armed, it shows the risk described below. When the vault would refuse a deposit, the card says deposits are closed and why.
 3. **Approve.** The vault needs permission to move your NVDA. The app asks for an approval of exactly the amount you are depositing, not an unlimited one.
 4. **Deposit.** Confirm the deposit transaction. The vault pulls your NVDA and mints cNVDA to you in the same transaction.
