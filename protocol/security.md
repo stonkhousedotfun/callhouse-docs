@@ -1,7 +1,7 @@
 # Security and audits
 
 {% hint style="warning" %}
-**The Stonkhouse vault is live on Robinhood Chain and has had no external audit.** No external security firm has reviewed the contracts, and none has been engaged. The reviews and tests described below were done by the team. They are not a substitute for an audit. The admin role is one hot key with no timelock, and there is no bug bounty.
+**The Stonkhouse vault is live on Robinhood Chain and has had no external audit.** No external security firm has reviewed the contracts yet. An external audit is pending, with no report yet. The reviews and tests described below were done by the team. They are not a substitute for an audit. The admin role is one hot key with no timelock, and there is no bug bounty.
 {% endhint %}
 
 Source paths refer to the `callhouse-contracts` repository unless marked as the app repository. The threat model and the review record are kept in `SECURITY.md` there, and the review scope in `docs/AUDIT-SCOPE.md`.
@@ -10,7 +10,7 @@ Source paths refer to the `callhouse-contracts` repository unless marked as the 
 
 | Item | State |
 |---|---|
-| External audit | **None.** The owner decided on 2026-09-13 not to commission an external audit (decision D14 in `SECURITY.md` and `README.md`). `docs/AUDIT-SCOPE.md` describes the scope for any reviewer. |
+| External audit | **None yet; pending.** No external audit has reported. The owner decided on 2026-09-13 against one (decision D14) and on 2026-09-15 made it pending. `docs/AUDIT-SCOPE.md` describes the scope for any reviewer. |
 | Mainnet deployment | Live. The vault `0x88a9…ecbb` was deployed on 2026-09-15 at block 63,467,882, and week 1 was armed the same day. Addresses are on [Contracts and addresses](addresses.md). |
 | Deployed source | The vault's Sourcify-verified sources are identical to `src/` in the contracts repository at commit `bec4dbd` (the L-01 fix), and `src/` has not changed since. |
 | Source verification | Vault: Sourcify `match` on creation and runtime bytecode (a partial match: the metadata hash differs), and partially verified on Blockscout. Both libraries: Sourcify runtime `match` only, not verified on Blockscout. **The Valorem Clear `0x53d7…C6` is not source-verified**; its runtime equals upstream Valorem's except for the metadata hash (see [Contracts and addresses](addresses.md#source-verification)). |

@@ -3,7 +3,7 @@
 This is the full list. Most of these are not bugs and have no fix. They are the shape of writing covered calls against a tokenised security on a one-week clock, through contracts and tokens other people control.
 
 {% hint style="danger" %}
-**You can lose the collateral you deposit.** The Stonkhouse contracts are live on Robinhood Chain and **unaudited**: no external firm has audited them, and none is planned. The vault is at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`; every address is on [Contracts and addresses](../protocol/addresses.md).
+**You can lose the collateral you deposit.** The Stonkhouse contracts are live on Robinhood Chain and **unaudited**: no external firm has audited them yet. An external audit is pending, with no report yet. The vault is at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`; every address is on [Contracts and addresses](../protocol/addresses.md).
 {% endhint %}
 
 {% hint style="warning" %}
@@ -137,7 +137,7 @@ The vault runs on Robinhood Chain, which has a single sequencer run by Robinhood
 
 ### Smart contract risk
 
-**The Stonkhouse contracts are unaudited.** No external firm has audited them, and none is planned. What stands behind them is internal:
+**The Stonkhouse contracts are unaudited.** No external firm has audited them yet. An external audit is pending, with no report yet. What stands behind them is internal:
 
 * An adversarial review on 2026-09-12 across 13 surfaces raised 72 findings, of which 51 survived refutation. The contract defects fixed from it carry regression tests.
 * An internal audit on 2026-09-13 found five issues, the first of them High: the vault wrote calls before selling them, so anyone could write the same option into its bucket and take value by exercising. The contracts were redesigned the same day: calls are now written only when bought, the stranded-claim path was added, the two legs of a redemption were separated, and the share price was made honest under an issuer burn.
