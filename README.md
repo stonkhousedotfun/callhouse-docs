@@ -2,7 +2,7 @@
 
 Stonkhouse lets you put NVDA Stock Tokens to work on Robinhood Chain (chain id 4663). You deposit into **your own account** and choose how much is for sale each week. If someone buys, you get paid in USDG. If they don't, you keep the stock. Only the amount you offered can be sold.
 
-The first market is the **NVDA Stock Token**. Deposit at `app.stonkhouse.fun/account`. Buy at `app.stonkhouse.fun/book`. Factory: `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7`.
+The first market is the **NVDA Stock Token**. Deposit at `app.stonkhouse.fun/account`. Buy at `app.stonkhouse.fun/book`. Factory: `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb`.
 
 There is no protocol token, no points programme and no airdrop. What depositors receive is the USDG a buyer actually paid, less the protocol fee, plus the strike USDG of any assignment. The vault is not upgradeable and has no function that migrates deposits, so a fix would need a new vault.
 
@@ -20,13 +20,12 @@ There is no protocol token, no points programme and no airdrop. What depositors 
 ## Status
 
 {% hint style="danger" %}
-**1-lot accounts are live and have had no external audit.** The factory is `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7` on chain 4663. Every address is on [Contracts and addresses](protocol/addresses.md). There is no bug bounty.
+The factory is `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb` on chain 4663. Every address is on [Contracts and addresses](protocol/addresses.md).
 
 **Admin is a hot wallet with no timelock.** See [Roles and admin powers](protocol/roles.md).
 {% endhint %}
 
-* Deposits are capped at 20 NVDA **per account**. The admin can change the cap at any time.
-* The vault and its two libraries are verified on Sourcify as partial matches. Stonkhouse's clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`, is not yet source-verified; its runtime bytecode equals Valorem's upstream code apart from the metadata hash.
+* Stonkhouse's clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`, is not yet source-verified; its runtime bytecode equals Valorem's upstream code apart from the metadata hash.
 * The keeper's alerts are logged but not yet delivered to any channel.
 
 These docs contain no performance figures. Worked examples marked as coming from a fork rehearsal were produced on a copy of the chain, not by a live week. The app's Activity page lists the vault's weeks, including weeks that sold nothing.

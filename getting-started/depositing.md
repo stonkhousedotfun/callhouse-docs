@@ -7,7 +7,7 @@ A deposit sends NVDA Stock Tokens into **your isolated account**. They sit idle 
 {% endhint %}
 
 {% hint style="info" %}
-The factory is live at `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7`. Each account is capped at 20 NVDA. Every address is on [Contracts and addresses](../protocol/addresses.md).
+The factory is live at `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb`. Every address is on [Contracts and addresses](../protocol/addresses.md).
 {% endhint %}
 
 ## What you need
