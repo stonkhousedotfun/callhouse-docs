@@ -1,12 +1,12 @@
 # Table of contents
 
-* [Introduction](README.md)
+* [StonkHouse Docs](README.md)
 
 ## Getting started
 
 * [How Stonkhouse works](getting-started/how-it-works.md)
 * [Depositing](getting-started/depositing.md)
-* [Withdrawing and the redeem queue](getting-started/withdrawing.md)
+* [Withdrawing](getting-started/withdrawing.md)
 * [Claiming USDG](getting-started/claiming-usdg.md)
 
 ## Product
