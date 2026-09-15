@@ -1,10 +1,8 @@
 # Introduction
 
-Renamed from Callhouse (callhouse.finance) to Stonkhouse (stonkhouse.fun) on 2026-09-15. The repository, the GitBook space and the on-chain token name ("Callhouse NVDA", symbol cNVDA) still say callhouse.
+Stonkhouse lets you put NVDA Stock Tokens to work on Robinhood Chain (chain id 4663). You deposit into **your own account** and choose how much is for sale each week. If someone buys, you get paid in USDG. If they don't, you keep the stock. Only the amount you offered can be sold.
 
-Stonkhouse is 1-lot covered calls on Robinhood Chain (chain id 4663). You deposit a Stock Token into **your own account**. You choose how many lots to write (one NVDA per lot). The keeper lists one full Seaport 1.6 order per lot, on an option type that belongs to that account, so a fill writes **your** NVDA and pays **you** the premium. Unfilled lots come back. Assignment of your option type cannot take anyone else's stock.
-
-The first market is the **NVDA Stock Token**. Buyers fill on the app's book (`app.stonkhouse.fun/book`). The factory is `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7`. A retired pooled vault at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb` is not used for new deposits.
+The first market is the **NVDA Stock Token**. Deposit at `app.stonkhouse.fun/account`. Buy at `app.stonkhouse.fun/book`. Factory: `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7`.
 
 There is no protocol token, no points programme and no airdrop. What depositors receive is the USDG a buyer actually paid, less the protocol fee, plus the strike USDG of any assignment. The vault is not upgradeable and has no function that migrates deposits, so a fix would need a new vault.
 
