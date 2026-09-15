@@ -9,86 +9,190 @@ Idle ──rollOpen──► Listed ──lockBook──► Exercisable ──ro
                               (lockBook is optional)
 ```
 
-The vault has no calendar of its own. Every deadline comes from Overcall's registry for the NVDA market, which publishes each cycle's strikes, its exercise timestamp and its expiry. The vault copies those timestamps when it writes, so a cycle keeps its own deadlines even after the registry moves on to the next one.
+**Nothing is written when a cycle opens.** `rollOpen` arms the vault with one Valorem call option type. Calls are written only inside a buyer's fill, and each fill writes exactly the number of calls that buyer takes. A week can sit in Listed from start to finish with nothing written, and a week nobody buys has nothing to settle.
+
+The vault has no calendar of its own and reads nobody else's. Each week the keeper creates the option type itself, and that type's exercise and expiry timestamps are the week's deadlines. When the vault arms, it checks those timestamps against bounds compiled into the contracts and copies them, so a cycle keeps its own deadlines whatever happens later.
 
 {% hint style="info" %}
-**Overcall's current window** is book close on Friday at 20:00 UTC and expiry on Saturday at 20:00 UTC, in a seven-day cycle with a 24-hour exercise window. Those times belong to the venue, not to Stonkhouse. If the registry moves them, the vault moves with it.
+**The weekly times are US Eastern Time.** By default the keeper sets exercise at the NYSE Friday close, 16:00 America/New_York, and expiry 24 hours later. That is 20:00 UTC while US daylight saving time is in force, and 21:00 UTC after it ends on 1 November 2026 (it starts again on 14 March 2027). When the Friday is a full-day NYSE holiday, exercise moves back to the previous session's close: Thursday 16:00 ET, or Wednesday if Thursday is closed too. Early-close days are not modelled, so their timestamp stays at 16:00 ET. These are the keeper's choices. The vault enforces only the bounds listed below.
 {% endhint %}
+
+{% hint style="info" %}
+**History.** Earlier designs took the weekly cycle, its strikes and its deadlines from Overcall's registry, and listed through Overcall. The current vault does not use Overcall for anything.
+{% endhint %}
+
+The keeper's built-in holiday table covers 2026 and 2027. The Friday holidays in it, and where exercise lands instead:
+
+| Friday holiday | Exercise instead |
+|---|---|
+| 25 December 2026 (Christmas) | Thursday 24 December 2026, 16:00 ET |
+| 1 January 2027 (New Year's Day) | Thursday 31 December 2026, 16:00 ET |
+| 26 March 2027 (Good Friday) | Thursday 25 March 2027, 16:00 ET |
+| 18 June 2027 (Juneteenth, observed) | Thursday 17 June 2027, 16:00 ET |
+| 24 December 2027 (Christmas, observed) | Thursday 23 December 2027, 16:00 ET |
+
+For later years the keeper operator has to supply the dates.
 
 ## The phases
 
 | Phase | Starts when | Who triggers it | Deposits | Withdrawals |
 |---|---|---|---|---|
 | **Idle** | The vault is flat | — | Open, up to the cap | Instant |
-| **Listed** | `rollOpen` writes this cycle's calls | Keeper only | Open until the exercise timestamp | Queue |
+| **Listed** | `rollOpen` arms this cycle's option type | Keeper only | Open until the exercise timestamp | Queue |
 | **Exercisable** | `lockBook`, at or after the exercise timestamp | Anyone | Closed | Queue |
 | **Settling** | `rollClose`, at or after expiry | Keeper from expiry; anyone from expiry + 1 hour | Closed | Being settled |
-| **Idle** again | End of the same `rollClose` transaction | — | Open | Instant |
+| **Idle** again | End of the same `rollClose` transaction | — | Open, unless the claim is stranded | Instant, unless the claim is stranded |
 
-### Idle → Listed: `rollOpen`
+Settling exists only inside the `rollClose` transaction. A **stranded claim** is an Idle vault that could not redeem the week's Valorem claim; it has its own section [below](#when-the-close-cannot-redeem-the-claim-a-stranded-claim).
 
-Only the keeper can open a cycle, and only while the registry says writing is open. The keeper chooses one of the registry's strike rungs (up to five per cycle) and a number of contracts. The vault then checks everything itself before any NVDA moves:
+### Idle → Listed: the keeper creates the option type, then `rollOpen`
 
-* the vault is Idle and writes are not halted;
-* the option is approved in the registry's current cycle, is an NVDA call settled in USDG with a lot size of exactly one NVDA per contract, and its exercise and expiry match the cycle's;
-* the cycle's expiry is after its exercise timestamp and no more than 21 days away;
-* the strike is 3% to 12% above spot (launch band);
-* the price feed is no older than 4 days (launch setting) and the Stock Token has not paused its oracle;
-* the number of contracts is at least 1, at most 50, and at most 95% of idle NVDA in whole tokens;
-* Valorem's engine fee is off, or the admin has accepted it.
+Anyone can create a Valorem option type with `newOptionType`, and a type's terms can never change once it exists. The keeper builds each week's type from six fields:
 
-If any check fails, nothing is written and the vault stays Idle. The keeper tries again while the registry's write window is open, so a temporary problem such as a stale price feed can still end in a write later that week. If no write lands before the window closes, the week is skipped. Deposits and instant redemptions stay open, and a skipped week is a normal outcome.
+| Field | The keeper's default | What the vault enforces at `rollOpen` |
+|---|---|---|
+| Underlying | The NVDA Stock Token | Must be this vault's asset |
+| Contract size | 1 NVDA | Exactly 1 NVDA |
+| Exercise asset | USDG | Must be USDG |
+| Strike | Spot plus 5%, rounded to the nearest whole USDG | At live spot, inside the band: at least 3% and at most 12% above (launch policy), both bounds checked |
+| Exercise timestamp | The next NYSE Friday close, 16:00 ET, at least 6 hours away | At least 1 hour after the `rollOpen` |
+| Expiry timestamp | Exercise plus 24 hours | At least 1 day after exercise, and at most 21 days after the `rollOpen` |
 
-### During Listed: listings
+An option id is a pure function of those six fields. If the type already exists, for example from an earlier attempt, the keeper reuses it rather than creating it again.
 
-The keeper proposes a Seaport order, and the vault authorises it on chain only if every field matches the vault's own state and the gross premium is at least 0.40% of spot notional. One listing can be live at a time, at most three can be signed per cycle, and every listing must end by the exercise timestamp. The keeper or the Guardian can cancel a listing.
+The keeper then calls `rollOpen(optionId)`. Only the keeper can. The vault reads the type back from the clearinghouse and checks, before anything else happens:
 
-Buyers can fill a listing in part or in full. Each fill pays USDG to the vault immediately.
+* the vault is Idle, writes are not halted, and no earlier claim is still stranded;
+* the id is an option type, not a claim and not an unknown id;
+* every rule in the right-hand column above;
+* Valorem's engine fee is off, or the vault admin has accepted it;
+* the Stock Token has not paused its oracle, the price feed is no older than 4 days (launch setting), and the strike sits inside the band at that price.
+
+If every check passes, the vault gives the cycle its own number, snapshots the strike, exercise and expiry, resets its listing budget to three, and moves to Listed. No NVDA moves and no option token exists yet.
+
+If any check fails, nothing happens and the vault stays Idle. The keeper keeps trying for that Friday, so a temporary problem such as a stale price feed can still end in a week armed later. If nothing arms before that Friday, the week is skipped. Deposits and instant redemptions stay open through a skipped week, and a skipped week is a normal outcome.
+
+The keeper arms as soon as the vault is Idle and flat and these checks pass. After a normal close that is usually during the weekend, so the week's strike is set against the price feed's last Friday print, which can come a few hours before the close. See [Risks](risks.md#the-price-feed).
+
+### During Listed: one listing, and each fill writes what it buys
+
+The keeper proposes one Seaport 1.6 order, and `approveListing` (keeper only) authorises it on chain only if every field matches the vault's own state:
+
+* the offerer and the zone are both the vault, the order type is partial-fill restricted, there is no conduit and the zone hash is zero;
+* there is one offer item: this cycle's option id, a fixed number of contracts, at most the vault's remaining capacity (the policy maximum on total assets, less the contracts already written this cycle);
+* there is one payment item: USDG to the vault, a fixed amount that divides exactly by the number of contracts, at a price per contract no higher than the strike;
+* the order is live now, ends no later than the exercise timestamp, and uses the vault's current Seaport counter;
+* at live spot the strike is not below the band floor, and the price is not below the premium floor (0.40% of spot per contract at launch);
+* no other listing is live, and fewer than three have been authorised this cycle. Every approval spends one of the three, cancelled or not.
+
+The vault then validates the order on Seaport, so it fills with an empty signature. The vault has no signing key, and there is no venue fee item in the order.
+
+A buyer fills the listing on the app's fill page or with any Seaport 1.6 client, taking any whole number of the contracts left (see [Buying calls](buying-calls.md)). On every fill Seaport calls the vault before it moves anything, and the vault runs the fill gate:
+
+* the caller is Seaport, and the order is this vault's live listing;
+* the vault is Listed, writes are not halted, and the exercise timestamp has not arrived;
+* Valorem's engine fee is off or accepted, the oracle is not paused and the price feed is not stale;
+* **at the spot of the fill**, the strike is not below the band floor, and the price of this fill is not below the premium floor (plus the Valorem engine fee valued at spot, if that fee is on);
+* the contracts already written this cycle plus this fill stay within the contract cap and the utilisation limit, measured on the vault's total assets at that moment.
+
+If the fill passes, the vault writes exactly the contracts being bought into Valorem, inside the buyer's transaction, and then checks that its NVDA balance still covers what settled redemptions are owed. Seaport moves the new option tokens to the buyer and the buyer's USDG to the vault. A last check runs after every transfer and reverts the whole fill if any option token stayed in the vault. **Written always equals sold, and the vault never holds an unsold call.**
+
+{% hint style="warning" %}
+**A fill can be refused after a rally.** Both floors are recomputed from the spot at the moment of each fill, not the spot when the listing was made.
+
+* If spot rises until the listing's price is under the premium floor, fills are refused until the keeper reprices, which spends one of the week's three listings.
+* If spot rises until the strike itself is under the band floor, fills are refused whatever the price, until spot falls back.
+
+With the listing from the fork rehearsal below (strike 223 USDG, price 0.856189 USDG per contract, spot 211.93 USDG when listed) and the launch policy, the premium floor would refuse fills once spot passed about 214.05 USDG, and the band floor would refuse them once spot passed about 216.50 USDG. Those thresholds are computed from the rehearsal's listing, not observed. In the keeper's extended fork rehearsal, a 1.5% rise in spot (to 215.11 USDG) put that same 0.856189 price under the fill floor of 0.860426 USDG: the fill was refused, the keeper cancelled and relisted at 0.869032 USDG with the week's third and last listing, and a fill at the new price went through.
+{% endhint %}
 
 ### How the keeper chooses, by default
 
-The contracts set the bounds. Inside them, the keeper software (`keeper/src/policy.ts` and `keeper/src/config.ts` in the app repository) makes these choices with its default settings. They are operating choices, not commitments, and whoever runs the keeper can change them in its configuration, without a contract change.
+The contracts set the bounds. Inside them, the keeper software (`keeper/src/calendar.ts`, `keeper/src/policy.ts`, `keeper/src/roll.ts` and `keeper/src/config.ts` in the app repository) makes these choices with its default settings. They are operating choices, not commitments: whoever runs the keeper can change them in its configuration, without a contract change.
 
-* **Strike:** the nearest out-of-the-money rung, meaning the lowest strike inside the band. That is where a weekly call has premium, and it is also the rung most likely to be assigned.
-* **Size:** the largest the policy allows, 95% of idle NVDA in whole tokens, capped at the contract limit. The whole written size goes into one listing.
-* **Price:** the vault's premium floor for the current spot (0.40% of spot per contract at launch), raised to the last observed fill on Overcall's book for that rung, but never more than three times the floor, never below 20 base units and never above the strike. With the default margin setting of 0, a week with no fill history lists at the floor.
-* **Listing length:** until the exercise timestamp.
-* **Relisting:** after a cancel or an invalidated order, the keeper relists once by default, never below its previous ask. The vault's limit of three signed listings a cycle applies regardless.
+* **Window:** the next NYSE Friday close at 16:00 ET, at least 6 hours away (otherwise the Friday after), with expiry 24 hours later.
+* **Strike:** spot plus 5%, rounded to the nearest whole USDG. While that falls outside the policy band, the keeper arms nothing; it looks again on each tick until the Friday goes by.
+* **Size:** the vault's whole remaining capacity, in one listing.
+* **Price:** the fill-time premium floor per contract at the current spot, raised by 1% and rounded up to the next USDG base unit, never above the strike. The margin means a small rise in spot does not immediately make the listing unfillable. With no model price behind it, this default sells at just above the floor. See [Risks](risks.md#keeper-key-compromise).
+* **Listing length:** from now until the exercise timestamp.
+* **Where the order lives:** the keeper stores the order and serves it from its own `/orders` endpoint, with an empty signature. The app's fill page reads it from there, checks it against the chain, and offers the fill.
+* **Repricing:** each tick the keeper repeats the fill gate's spot checks. If a rise in spot has put the price under the premium floor, it cancels and relists at the new floor, within the vault's three listings. If the strike has fallen under the band floor, no price helps: the keeper raises an alert and leaves the listing in place for spot to fall back. Once the three listings are spent, a refused listing stays unfillable.
+* **Sold out:** if the listing sells out and deposits made during the week have added capacity, the keeper lists the remainder, within the three.
+* **Closing:** `lockBook` at the exercise timestamp, `rollClose` at expiry, and `settleQueue` whenever the vault is Idle with shares queued.
+* **Stranded claim:** no new week is armed; the keeper tries `retryStrandedClaim()` every hour, simulating it first so a failed attempt costs no gas, and raises an alert.
 
-If Overcall's book does not show the listing, the keeper keeps the signed order and serves it from its own `/orders` endpoint. When Overcall's book does not show the vault's live listing, the app's cycle page falls back to the keeper: it fetches the keeper's signed order, checks it against the chain (Seaport's counter and order hash must match the listing the vault authorised, every leg must pay the vault and Overcall's 5%, and the order must not be cancelled or sold out), and offers a fill from the page, labelled as the keeper's listing. The order is still invisible to buyers who only use Overcall.
+In a fork rehearsal of the keeper run on 15 September 2026 (UTC), against a copy of Robinhood Chain with the live Valorem clearinghouse, Seaport 1.6 and USDG, and a test price feed seeded with the real Chainlink print, spot was 211.93 USDG. The keeper created a 223 USDG strike exercising on Friday 18 September at 16:00 ET (20:00 UTC), armed it, and with 25 NVDA in the vault listed 23 contracts at 0.856189 USDG each, against a floor of 0.847711. Those are rehearsal figures, not a forecast.
 
 ### Listed → Exercisable: `lockBook`
 
-From the exercise timestamp, anyone can call `lockBook`. It cancels any listing still live and moves the vault to Exercisable. Nothing depends on it being called: deposits close on the timestamp itself, and `rollClose` also accepts a vault that is still Listed.
+From the exercise timestamp, anyone can call `lockBook`. It invalidates any listing still live by bumping the vault's Seaport counter, and moves the vault to Exercisable. Nothing depends on it being called: deposits and fills both stop at the timestamp itself, and `rollClose` also accepts a vault that is still Listed.
 
 During the exercise window, holders of this cycle's calls can exercise them in Valorem. The vault does nothing in this phase. See [Assignment](assignment.md).
 
 ### Exercisable → Settling → Idle: `rollClose`
 
-From expiry, the keeper can call `rollClose`. One hour after expiry, anyone can. This is the fallback if the keeper is down: nobody needs a key to get the week closed.
+From expiry, the keeper can call `rollClose`. One hour after expiry, anyone can. That is the fallback if the keeper is down: nobody needs a key to get the week closed.
 
 `rollClose` runs as one transaction, in this order:
 
-1. Cancels any listing still live.
-2. Redeems the vault's Valorem claim: NVDA that was not assigned comes back, and strike USDG comes back for what was.
-3. Harvests the USDG: the 5% protocol fee is taken from the premium only, and the rest, including strike proceeds in full, is credited per share.
-4. Settles the redeem queue for this epoch.
-5. Returns the vault to Idle.
+1. Invalidates any listing still live.
+2. Records how many contracts were assigned.
+3. If nothing was sold this cycle, there is no claim: the armed type is forgotten and there is nothing to redeem. Otherwise the vault tries to redeem its Valorem claim: NVDA that was not assigned comes back, and strike USDG comes back for what was.
+4. Harvests the USDG: the 5% protocol fee is taken from premium only, the rest, including strike proceeds in full, is credited per share, and the fee is pushed to the fee recipient if the transfer goes through.
+5. Settles the redeem queue for this epoch.
+6. Returns the vault to Idle.
+
+If the redeem in step 3 reverts, the close still completes, and the claim is stranded.
+
+### When the close cannot redeem the claim: a stranded claim
+
+Valorem's redeem pays out a claim's USDG and its NVDA in one call, and a revert on either leg reverts both. Each token's issuer can cause that revert:
+
+* **USDG side**, in a week with any assignment (so there is USDG to pay): USDG paused, the vault or the clearinghouse frozen on USDG, or the clearinghouse's USDG burnt through USDG's supply controls.
+* **Stock Token side**, in a week that was not fully assigned (so there is NVDA to pay): the Stock Token paused, or the vault or the clearinghouse blocklisted on it.
+
+When that happens:
+
+* `rollClose` still completes and the vault goes to Idle, **keeping the claim**. Everything inside it, the unassigned NVDA included, stays in Valorem until a redeem goes through.
+* Premium already in the vault is harvested as usual. If the protocol fee cannot be paid, it waits.
+* The redeem queue still settles, on the idle NVDA. Every epoch that settles while the claim is stranded also owns its pro-rata share of the claim, paid when the claim is redeemed.
+* Deposits are refused, instant redemption is off, and `rollOpen` is refused. No new week starts until the claim is collected.
+* **Anyone can call `retryStrandedClaim()`**, at any time and as often as they like. It reverts while the cause lasts. The first call that succeeds redeems the claim: the queue's share is set aside for those redeemers, and the rest belongs to the shares still held, with the NVDA back in the share price and the USDG credited fee-free like any strike proceeds. A protocol fee the close could not pay is paid then.
+* A call made with too little gas cannot fake a failed redeem: the vault reverts instead of stranding.
+
+Nothing sets a limit on how long a strand lasts. It ends only when the cause is lifted, if it ever is: Valorem gives the vault no other way to take the claim's contents out.
+
+In the same fork rehearsal, week 3 sold 2 calls at a 239 USDG strike and 1 was exercised. The USDG issuer's freeze key, impersonated on the fork, then froze the vault on USDG. `rollClose` stranded the claim: deposits, `rollOpen` and `retryStrandedClaim` were all refused, and the redeem queue settled 2 of the 16 shares for 1.55 NVDA of idle collateral plus a 12.5% share of the claim. The 0.092112 USDG protocol fee could not be paid. After the freeze was lifted, the retry redeemed 1 NVDA and 239 USDG: 0.125 NVDA and 29.875 USDG went to the queued redeemer, 209.125 USDG was credited to the remaining shares with no fee, and the pending fee was paid. The keeper armed week 4 normally afterwards.
 
 ## What stops at each phase, and what never does
 
-A halt on writes blocks `rollOpen` and new listings. It never blocks deposits, instant or queued redemptions, USDG claims, cancelling a listing, `lockBook` or `rollClose`.
+A halt on writes blocks `rollOpen`, new listings and every fill. It never blocks deposits, instant or queued redemptions, `settleQueue`, USDG claims, cancelling a listing, `lockBook`, `rollClose` or `retryStrandedClaim`.
 
-| Action | Idle | Listed | Exercisable |
-|---|---|---|---|
-| Deposit | Yes | Until the exercise timestamp | No |
-| Instant redemption | Yes | No | No |
-| Queue a redemption | Yes, but it waits for the next close | Yes | Yes |
-| Complete a settled redemption | Yes | Yes | Yes |
-| Claim USDG | Yes | Yes | Yes |
+| Action | Idle | Listed | Exercisable | Idle, claim stranded |
+|---|---|---|---|---|
+| Deposit | Yes, up to the cap | Until the exercise timestamp | No | No |
+| Instant redemption | Yes | No | No | No |
+| Queue a redemption | Yes | Yes | Yes | Yes |
+| Settle the queue (`settleQueue`, anyone) | Yes, when shares are queued | No, it settles at `rollClose` | No, it settles at `rollClose` | Yes: the idle share now, the claim share when it is redeemed |
+| Complete a settled redemption | Yes | Yes | Yes | Yes |
+| Claim USDG | Yes | Yes | Yes | Yes |
+
+A deposit is also refused for reasons that do not depend on the phase, such as an issuer burn that leaves settled redemptions unbacked. [Depositing](../getting-started/depositing.md) lists them all.
+
+## Who can call what
+
+| Who | Can call |
+|---|---|
+| **Anyone** | `lockBook` from the exercise timestamp; `rollClose` from expiry + 1 hour; `settleQueue` while Idle with shares queued; `retryStrandedClaim` while a claim is stranded; `sweepFee` while a protocol fee is pending; filling the listing through Seaport; creating Valorem option types |
+| **Keeper** | `rollOpen`, `approveListing`, `cancelListing`, `invalidateAllListings`, and `rollClose` from expiry |
+| **Guardian** | `haltWrites`, `cancelListing`, `invalidateAllListings`. It can stop, never start |
+| **Vault admin** | Policy inside the hard caps, the deposit cap, the price age, the fee recipient, accepting Valorem's engine fee, halting and unhalting, granting and revoking every role |
+
+Details and worst cases per key: [Roles and admin powers](../protocol/roles.md).
 
 ## Related
 
 * [How Stonkhouse works](../getting-started/how-it-works.md)
+* [Buying calls](buying-calls.md)
 * [Launch policy and hard caps](policy.md)
 * [Roles and admin powers](../protocol/roles.md)
