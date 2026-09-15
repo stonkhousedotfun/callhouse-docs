@@ -1,12 +1,12 @@
 # FAQ
 
-### Is Callhouse live? Where is the vault address?
+### Is Stonkhouse live? Where is the vault address?
 
-Not yet. The Callhouse contracts are not deployed and have not been audited. The public site at `callhouse.finance` is live but never asks for a wallet, and the app at `app.callhouse.finance` is not deployed yet. The vault address will be published on [Contracts and addresses](../protocol/addresses.md) after deployment. Until it appears there, no address is the Callhouse vault.
+Not yet. The Stonkhouse contracts are not deployed and have not been audited. The public site at `stonkhouse.fun` is live but never asks for a wallet, and the app at `app.stonkhouse.fun` is not deployed yet. The vault address will be published on [Contracts and addresses](../protocol/addresses.md) after deployment. Until it appears there, no address is the Stonkhouse vault.
 
 ### What does a week pay?
 
-Whatever a buyer actually paid for that week's calls, less fees, and nothing if nobody bought. Premium is paid only if a buyer fills. Callhouse does not publish an APY, an APR or any annualised figure, and these docs contain no projections. Once the vault runs, every closed week is published in the app with the premium the vault received in USDG and the net premium after the protocol fee, including the weeks that paid zero. On an assigned week the strike proceeds are shown separately and left out of every premium figure, because they are your collateral sold at the strike, not premium. The app also shows each week's net premium per cNVDA and net premium as a share of the collateral, valued at spot at harvest. Both cover that week only, are never annualised, and leave out strike proceeds.
+Whatever a buyer actually paid for that week's calls, less fees, and nothing if nobody bought. Premium is paid only if a buyer fills. Stonkhouse does not publish an APY, an APR or any annualised figure, and these docs contain no projections. Once the vault runs, every closed week is published in the app with the premium the vault received in USDG and the net premium after the protocol fee, including the weeks that paid zero. On an assigned week the strike proceeds are shown separately and left out of every premium figure, because they are your collateral sold at the strike, not premium. The app also shows each week's net premium per cNVDA and net premium as a share of the collateral, valued at spot at harvest. Both cover that week only, are never annualised, and leave out strike proceeds.
 
 ### What happens in a week nobody buys?
 
@@ -22,7 +22,7 @@ Most likely because the week was assigned. The share price counts only NVDA, and
 
 ### What fees do I pay?
 
-Overcall takes 5% of gross premium inside each fill. Callhouse takes 5% of the premium the vault receives. Stacked, that is 9.75% of what the buyer paid. Neither of those fees is charged on deposits, on idle NVDA, on strike proceeds, or on a week with no buyer. The protocol fee can never exceed 20% of premium. Valorem Clear also has an engine fee of 15 bps of written notional. It is switched off today, and the vault will not write while it is on unless the admin accepts it. If accepted, it would be paid in NVDA from the vault on every write, filled or not. See [Fees](../product/fees.md).
+Overcall takes 5% of gross premium inside each fill. Stonkhouse takes 5% of the premium the vault receives. Stacked, that is 9.75% of what the buyer paid. Neither of those fees is charged on deposits, on idle NVDA, on strike proceeds, or on a week with no buyer. The protocol fee can never exceed 20% of premium. Valorem Clear also has an engine fee of 15 bps of written notional. It is switched off today, and the vault will not write while it is on unless the admin accepts it. If accepted, it would be paid in NVDA from the vault on every write, filled or not. See [Fees](../product/fees.md).
 
 ### Can I withdraw at any time?
 
@@ -50,19 +50,19 @@ Stock Tokens are debt securities issued by Robinhood Assets (Jersey) Limited, an
 
 ### Can the team change the rules, or take my tokens?
 
-At launch the vault admin is a single deployer key; it moves to a 2-of-3 Safe (the Admin Safe) after a handover. The admin can grant and revoke roles, and there is no timelock. It can change policy settings, but only inside hard caps compiled into the contracts. For example, it cannot sell calls closer than 1% above spot or set the protocol fee above 20% of premium. The keeper can propose trades but cannot move funds; the vault checks every proposal. The Guardian can only halt new writes and cancel listings. No Callhouse role can block a withdrawal. The contracts are not upgradeable. See [Launch policy and hard caps](../product/policy.md) and [Roles and admin powers](../protocol/roles.md).
+At launch the vault admin is a single deployer key; it moves to a 2-of-3 Safe (the Admin Safe) after a handover. The admin can grant and revoke roles, and there is no timelock. It can change policy settings, but only inside hard caps compiled into the contracts. For example, it cannot sell calls closer than 1% above spot or set the protocol fee above 20% of premium. The keeper can propose trades but cannot move funds; the vault checks every proposal. The Guardian can only halt new writes and cancel listings. No Stonkhouse role can block a withdrawal. The contracts are not upgradeable. See [Launch policy and hard caps](../product/policy.md) and [Roles and admin powers](../protocol/roles.md).
 
 ### Is cNVDA Nvidia stock? Can I transfer it?
 
 No. cNVDA is a vault share: a pro-rata claim on the NVDA Stock Tokens the vault holds, plus separately accrued USDG. The Stock Token underneath is itself not Nvidia equity and carries no vote. cNVDA is a standard ERC-20 token and can be transferred; USDG earned before a transfer stays with the sender. Do not send cNVDA to the vault's own address: that is not a withdrawal request, and shares sent there are never burned or paid out, so they are lost. To exit, redeem or queue a redemption instead; see [Withdrawing and the redeem queue](../getting-started/withdrawing.md). It is not listed anywhere, so there is no market to sell it into. There is no protocol token, no points programme and no airdrop.
 
-### Can I use Callhouse from the United States?
+### Can I use Stonkhouse from the United States?
 
-No. Callhouse is not available to US persons. The same perimeter applies as to the Stock Tokens themselves.
+No. Stonkhouse is not available to US persons. The same perimeter applies as to the Stock Tokens themselves.
 
-### Who operates Callhouse, and which terms apply?
+### Who operates Stonkhouse, and which terms apply?
 
-The Terms of Use at `callhouse.finance/terms` and the privacy notice at `callhouse.finance/privacy` cover both domains, and using either domain is use under them. No operating entity and no governing law have been designated yet; the pages state that gap rather than naming a placeholder. See [Risks](../product/risks.md#regulatory-perimeter).
+The Terms of Use at `stonkhouse.fun/terms` and the privacy notice at `stonkhouse.fun/privacy` cover both domains, and using either domain is use under them. No operating entity and no governing law have been designated yet; the pages state that gap rather than naming a placeholder. See [Risks](../product/risks.md#regulatory-perimeter).
 
 ### Can I use cNVDA as collateral somewhere else?
 
@@ -70,4 +70,4 @@ Nothing stops a transfer, but be careful how it is priced. The vault's `convertT
 
 ### How do I report a security issue?
 
-Email **security@callhouse.finance**, and do not open a public issue. The contracts are unaudited, and a bug bounty is planned to open in the second week after mainnet launch. See [Security and audits](../protocol/security.md#reporting-a-vulnerability).
+Email **security@stonkhouse.fun**, and do not open a public issue. The contracts are unaudited, and a bug bounty is planned to open in the second week after mainnet launch. See [Security and audits](../protocol/security.md#reporting-a-vulnerability).

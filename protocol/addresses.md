@@ -1,9 +1,9 @@
 # Contracts and addresses
 
 {% hint style="warning" %}
-**The Callhouse vault is not deployed yet.** There is no Callhouse vault address, no library address, no admin Safe address and no fee Safe address. They will be published on this page after deployment.
+**The Stonkhouse vault is not deployed yet.** There is no Stonkhouse vault address, no library address, no admin Safe address and no fee Safe address. They will be published on this page after deployment.
 
-Until then, treat any address that claims to be the Callhouse vault as unverified. After deployment, trust only the addresses listed here, and check them on chain as described below. Do not trust an address from anywhere else: a message, a social post, a search result, or another site's config.
+Until then, treat any address that claims to be the Stonkhouse vault as unverified. After deployment, trust only the addresses listed here, and check them on chain as described below. Do not trust an address from anywhere else: a message, a social post, a search result, or another site's config.
 {% endhint %}
 
 ## Chain
@@ -19,7 +19,7 @@ Until then, treat any address that claims to be the Callhouse vault as unverifie
 
 Blockscout for chain 4663 sits behind a Cloudflare challenge. Browsers get through it, but scripted clients that send no `Referer` header receive an HTML page instead of JSON (`ops/addresses.json`). Both public RPCs return HTTP 403 to clients that send no `User-Agent`.
 
-## Callhouse contracts
+## Stonkhouse contracts
 
 Filled in at deployment. Every row is empty today.
 
@@ -35,7 +35,7 @@ The keeper and guardian addresses can be checked with `hasRole` once published. 
 
 ## Third-party contracts on chain 4663
 
-These contracts are not Callhouse's. Callhouse does not control, upgrade or audit them. Addresses are copied from `ops/addresses.json` in the app repository, where each is marked `confirmed: true` (re-read on chain at block 61322378 on 2026-09-12). They match the constants in `script/Deploy.s.sol` and `script/Verify.s.sol` character for character.
+These contracts are not Stonkhouse's. Stonkhouse does not control, upgrade or audit them. Addresses are copied from `ops/addresses.json` in the app repository, where each is marked `confirmed: true` (re-read on chain at block 61322378 on 2026-09-12). They match the constants in `script/Deploy.s.sol` and `script/Verify.s.sol` character for character.
 
 | Contract | Address | What it is |
 |---|---|---|
@@ -48,7 +48,7 @@ These contracts are not Callhouse's. Callhouse does not control, upgrade or audi
 | Chainlink RHNVDA/USD | [`0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15`](https://robinhoodchain.blockscout.com/address/0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15) | Chainlink `AggregatorProxy`, description `RHNVDA / USD`, 8 decimals, market hours `us_equities_24/5`. The vault's spot source for the write gates and the UI. Never read during settlement. |
 
 {% hint style="warning" %}
-**The JUGGERNAUT registry is not Callhouse's.** Overcall's frontend config for chain 4663 has a top-level `registry` key set to `0x65dD407955912Be814f723724cE60f91ebd72616`. That is the OvercallRegistry for the **JUGGERNAUT** market, not NVDA. It is the same 5,905-byte contract and answers the same getters, but its immutable `collateralToken` is a different token. The Callhouse vault's constructor reverts `RegistryAssetMismatch` for any registry whose collateral, exercise token or clearinghouse do not match. The deploy script repeats that check before broadcasting.
+**The JUGGERNAUT registry is not Stonkhouse's.** Overcall's frontend config for chain 4663 has a top-level `registry` key set to `0x65dD407955912Be814f723724cE60f91ebd72616`. That is the OvercallRegistry for the **JUGGERNAUT** market, not NVDA. It is the same 5,905-byte contract and answers the same getters, but its immutable `collateralToken` is a different token. The Stonkhouse vault's constructor reverts `RegistryAssetMismatch` for any registry whose collateral, exercise token or clearinghouse do not match. The deploy script repeats that check before broadcasting.
 {% endhint %}
 
 The NVDA registry, and every other Overcall registry on this chain, is owned by the single EOA `0x408adcFFebDF48EC23F1E3811A91AeD3cC951CC0`. That owner sets the weekly cycle but holds no funds (`ops/recon/R1-overcall-registry.md` §6).

@@ -14,7 +14,7 @@ The launch arrangement for the vault's admin role: the deployer's own key holds 
 
 ### cNVDA
 
-The share token of the Callhouse NVDA vault. An ERC-20 with 18 decimals, representing a pro-rata claim on the vault's NVDA plus separately accrued USDG. It is not a Stock Token and not Nvidia equity.
+The share token of the Stonkhouse NVDA vault. An ERC-20 with 18 decimals, representing a pro-rata claim on the vault's NVDA plus separately accrued USDG. It is not a Stock Token and not Nvidia equity.
 
 ### Contract (lot)
 
@@ -22,7 +22,7 @@ One option contract, backed by exactly 1.0000 NVDA Stock Token. The vault writes
 
 ### Covered call
 
-A call option sold by someone who already holds the asset the call is on. The seller collects a premium and in return gives up any rise above the strike until expiry. Callhouse's calls are covered by the NVDA depositors put in.
+A call option sold by someone who already holds the asset the call is on. The seller collects a premium and in return gives up any rise above the strike until expiry. Stonkhouse's calls are covered by the NVDA depositors put in.
 
 ### Epoch
 
@@ -54,19 +54,19 @@ The function that moves the vault from Listed to Exercisable. Anyone can call it
 
 ### OTM (out of the money)
 
-A call whose strike is above the current price. Callhouse writes only calls whose strike is 3% to 12% above spot at launch, and never less than 1% above spot under the hard caps.
+A call whose strike is above the current price. Stonkhouse writes only calls whose strike is 3% to 12% above spot at launch, and never less than 1% above spot under the hard caps.
 
 ### Overcall
 
-The third-party options venue Callhouse uses. Its registry publishes the weekly cycle and strikes for each market, and its book shows listings to buyers. Overcall takes 5% of gross premium on each fill.
+The third-party options venue Stonkhouse uses. Its registry publishes the weekly cycle and strikes for each market, and its book shows listings to buyers. Overcall takes 5% of gross premium on each fill.
 
 ### Premium
 
-The USDG a buyer pays for a call. Premium is paid only if a buyer fills. It is credited to depositors as claimable USDG, after Overcall's 5% and the Callhouse protocol fee, and never added to the share price.
+The USDG a buyer pays for a call. Premium is paid only if a buyer fills. It is credited to depositors as claimable USDG, after Overcall's 5% and the Stonkhouse protocol fee, and never added to the share price.
 
 ### Protocol fee
 
-Callhouse's fee: 5% of the premium the vault receives at launch, with a compiled ceiling of 20%. Never charged on deposits, idle NVDA or strike proceeds. See [Fees](../product/fees.md).
+Stonkhouse's fee: 5% of the premium the vault receives at launch, with a compiled ceiling of 20%. Never charged on deposits, idle NVDA or strike proceeds. See [Fees](../product/fees.md).
 
 ### Redeem queue
 
@@ -86,7 +86,7 @@ The function that starts the week. Only the keeper can call it, and only while t
 
 ### Safe
 
-A smart-contract multisig wallet that needs a set number of signers to act. Callhouse's admin role moves to a 2-of-3 Safe after the launch handover (a single deployer key holds it until then), and the protocol fee is paid to a fee Safe.
+A smart-contract multisig wallet that needs a set number of signers to act. Stonkhouse's admin role moves to a 2-of-3 Safe after the launch handover (a single deployer key holds it until then), and the protocol fee is paid to a fee Safe.
 
 ### Share price
 
@@ -102,7 +102,7 @@ The price at which a call can be exercised, in USDG per contract. If a call is a
 
 ### USDG
 
-The stablecoin that premium and strike proceeds are paid in. It has 6 decimals. It is a third-party token whose contract Callhouse does not control.
+The stablecoin that premium and strike proceeds are paid in. It has 6 decimals. It is a third-party token whose contract Stonkhouse does not control.
 
 ### Valorem Clear
 

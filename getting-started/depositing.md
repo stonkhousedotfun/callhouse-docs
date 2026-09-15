@@ -3,7 +3,7 @@
 A deposit sends NVDA Stock Tokens into the vault and mints cNVDA shares to you. Deposits are open while the vault is Idle, and while it is Listed up until the cycle's exercise timestamp.
 
 {% hint style="warning" %}
-**Before you deposit:** Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities, issued by Robinhood Assets (Jersey) Limited. Callhouse is not available to US persons. The contracts are not audited. Read [Risks](../product/risks.md) first.
+**Before you deposit:** Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities, issued by Robinhood Assets (Jersey) Limited. Stonkhouse is not available to US persons. The contracts are not audited. Read [Risks](../product/risks.md) first.
 {% endhint %}
 
 {% hint style="info" %}
@@ -14,11 +14,11 @@ The vault is not deployed yet. The steps below describe how depositing works onc
 
 * NVDA Stock Tokens on Robinhood Chain (chain id 4663), and eligibility to hold them under the issuer's own terms.
 * ETH on Robinhood Chain for gas.
-* A wallet connected to `app.callhouse.finance`.
+* A wallet connected to `app.stonkhouse.fun`.
 
 ## Step by step
 
-1. Open the NVDA vault at `app.callhouse.finance` and connect your wallet. Switch to Robinhood Chain (4663) if asked.
+1. Open the NVDA vault at `app.stonkhouse.fun` and connect your wallet. Switch to Robinhood Chain (4663) if asked.
 2. Enter the amount of NVDA to deposit. The form shows how much room is left under the deposit cap and how many cNVDA the amount buys at the current share price. It does not quote a return.
 3. **Approve.** The vault needs permission to move your NVDA. The app asks for an approval of exactly the amount you are depositing, not an unlimited one.
 4. **Deposit.** Confirm the deposit transaction. The vault pulls your NVDA and mints cNVDA to you in the same transaction.

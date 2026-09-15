@@ -12,7 +12,7 @@ Idle ──rollOpen──► Listed ──lockBook──► Exercisable ──ro
 The vault has no calendar of its own. Every deadline comes from Overcall's registry for the NVDA market, which publishes each cycle's strikes, its exercise timestamp and its expiry. The vault copies those timestamps when it writes, so a cycle keeps its own deadlines even after the registry moves on to the next one.
 
 {% hint style="info" %}
-**Overcall's current window** is book close on Friday at 20:00 UTC and expiry on Saturday at 20:00 UTC, in a seven-day cycle with a 24-hour exercise window. Those times belong to the venue, not to Callhouse. If the registry moves them, the vault moves with it.
+**Overcall's current window** is book close on Friday at 20:00 UTC and expiry on Saturday at 20:00 UTC, in a seven-day cycle with a 24-hour exercise window. Those times belong to the venue, not to Stonkhouse. If the registry moves them, the vault moves with it.
 {% endhint %}
 
 ## The phases
@@ -89,6 +89,6 @@ A halt on writes blocks `rollOpen` and new listings. It never blocks deposits, i
 
 ## Related
 
-* [How Callhouse works](../getting-started/how-it-works.md)
+* [How Stonkhouse works](../getting-started/how-it-works.md)
 * [Launch policy and hard caps](policy.md)
 * [Roles and admin powers](../protocol/roles.md)

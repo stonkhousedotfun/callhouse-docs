@@ -24,7 +24,7 @@ The app shows "instant path open" or "queue only" based on the vault's `canRedee
 
 ### Step by step
 
-1. Open the NVDA vault at `app.callhouse.finance` and connect your wallet.
+1. Open the NVDA vault at `app.stonkhouse.fun` and connect your wallet.
 2. Enter the number of cNVDA shares to redeem. The app shows "Redeem now" when the instant path is open.
 3. Confirm. Your shares burn and NVDA is sent to you in the same transaction.
 
@@ -82,7 +82,7 @@ You have one queue slot per account. If you queue again after an earlier epoch h
 
 ## Why withdrawals queue at all
 
-While a call is open, the NVDA behind it is locked in Valorem until expiry. The vault cannot hand it back early, and it will not quote a price for a position whose outcome depends on whether buyers exercise. The queue is the mechanism, not a discretionary gate. No Callhouse key can jump it or stop it. The token issuers are outside Callhouse's control: a Stock Token freeze can hold up both the close and the NVDA payout until it lifts, and a USDG freeze on the vault can hold up the close of an assigned week. See [Risks](../product/risks.md).
+While a call is open, the NVDA behind it is locked in Valorem until expiry. The vault cannot hand it back early, and it will not quote a price for a position whose outcome depends on whether buyers exercise. The queue is the mechanism, not a discretionary gate. No Stonkhouse key can jump it or stop it. The token issuers are outside Stonkhouse's control: a Stock Token freeze can hold up both the close and the NVDA payout until it lifts, and a USDG freeze on the vault can hold up the close of an assigned week. See [Risks](../product/risks.md).
 
 cNVDA is not listed anywhere, so there is no secondary market to sell into instead.
 

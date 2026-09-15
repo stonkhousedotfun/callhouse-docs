@@ -1,9 +1,9 @@
-# How Callhouse works
+# How Stonkhouse works
 
-Callhouse runs one trade a week: it sells covered calls on pooled NVDA Stock Tokens and passes the USDG premium to depositors. The timing comes from Overcall's registry, not from a calendar inside the vault. If the registry has no open cycle, the vault writes nothing.
+Stonkhouse runs one trade a week: it sells covered calls on pooled NVDA Stock Tokens and passes the USDG premium to depositors. The timing comes from Overcall's registry, not from a calendar inside the vault. If the registry has no open cycle, the vault writes nothing.
 
 {% hint style="warning" %}
-Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities. Callhouse is not available to US persons.
+Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities. Stonkhouse is not available to US persons.
 {% endhint %}
 
 ## The loop in six steps
@@ -25,7 +25,7 @@ Then the next cycle opens and the loop repeats. The phase-by-phase version is on
 ## Where the money goes
 
 ```
-  You ──── NVDA ────► Callhouse vault ──── cNVDA ────► You
+  You ──── NVDA ────► Stonkhouse vault ─── cNVDA ────► You
                             │
              rollOpen: lock idle NVDA, write calls
                             ▼

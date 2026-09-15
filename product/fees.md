@@ -1,11 +1,11 @@
 # Fees
 
-The two live fees, Overcall's and Callhouse's, are taken out of premium, and premium exists only when a buyer fills. With those two fees, a week with no buyer is charged nothing.
+The two live fees, Overcall's and Stonkhouse's, are taken out of premium, and premium exists only when a buyer fills. With those two fees, a week with no buyer is charged nothing.
 
 Valorem's engine fee works differently. It is not taken out of premium. If Valorem switches it on and the vault admin accepts it, it is 15 bps of written notional, paid in NVDA from the vault's own balance on top of the locked collateral at each write, whether or not a buyer fills. It is off today, and the vault will not write while it is on and not accepted.
 
 {% hint style="warning" %}
-Premium is paid only if a buyer fills. The Overcall and Callhouse fees reduce what a filled week pays you. They are never charged on your deposit, on idle NVDA, or on strike proceeds from assignment. The Valorem engine fee, off and not accepted today, would be charged in NVDA on every write if the vault admin ever accepted it, so it would reduce depositors' NVDA.
+Premium is paid only if a buyer fills. The Overcall and Stonkhouse fees reduce what a filled week pays you. They are never charged on your deposit, on idle NVDA, or on strike proceeds from assignment. The Valorem engine fee, off and not accepted today, would be charged in NVDA on every write if the vault admin ever accepted it, so it would reduce depositors' NVDA.
 {% endhint %}
 
 ## Fee table
@@ -13,14 +13,14 @@ Premium is paid only if a buyer fills. The Overcall and Callhouse fees reduce wh
 | Charged by | Size | When | How |
 |---|---|---|---|
 | **Overcall** | 5% of gross premium | On each fill | A second payment inside the Seaport order itself. The buyer's USDG is split in the same transaction: 95% to the vault, 5% to Overcall. |
-| **Callhouse protocol fee** | 5% of the premium the vault receives | At harvest, only when that premium is above zero | Accrued when premium is harvested (at `rollClose`, or at a deposit checkpoint) and sent to the fee Safe |
+| **Stonkhouse protocol fee** | 5% of the premium the vault receives | At harvest, only when that premium is above zero | Accrued when premium is harvested (at `rollClose`, or at a deposit checkpoint) and sent to the fee Safe |
 | **Valorem engine fee** | 15 bps of written notional (minimum 1 base unit), in NVDA | Currently off. If on and accepted: at each write, filled or not | Pulled by Valorem from the vault's NVDA on top of the collateral. If Valorem switches it on, `rollOpen` reverts until the vault admin calls `acceptValoremFee(true)` |
 
-**Stacked, the two live fees come to 9.75% of what the buyer paid:** Overcall's 5% of the gross, then Callhouse's 5% of the 95% that reaches the vault.
+**Stacked, the two live fees come to 9.75% of what the buyer paid:** Overcall's 5% of the gross, then Stonkhouse's 5% of the 95% that reaches the vault.
 
 ### What is never charged
 
-These hold for the Overcall fee and the Callhouse protocol fee. They would not hold for the Valorem engine fee if the vault admin ever accepted it: that fee is paid in NVDA from the vault's balance on every write, including weeks that never fill.
+These hold for the Overcall fee and the Stonkhouse protocol fee. They would not hold for the Valorem engine fee if the vault admin ever accepted it: that fee is paid in NVDA from the vault's balance on every write, including weeks that never fill.
 
 * No fee on deposits.
 * No fee on idle NVDA.
@@ -44,7 +44,7 @@ Buyer pays (gross premium)       20.000000 USDG   2.00 x 10
 
 Harvest at rollClose
   Fee-bearing premium            19.000000
-  Callhouse protocol fee 5%       0.950000         floor(19.00 x 5%)
+  Stonkhouse protocol fee 5%      0.950000         floor(19.00 x 5%)
   Credited to depositors         18.050000
 
 Expiry out of the money
@@ -61,7 +61,7 @@ Premium, as above                19.000000 USDG   received by the vault
 Strike proceeds                2310.000000 USDG   231.00 x 10, fee-free
 Harvested at rollClose         2329.000000 USDG
   Fee-bearing                    19.000000         premium only
-  Callhouse protocol fee 5%       0.950000
+  Stonkhouse protocol fee 5%      0.950000
   Credited to depositors       2328.050000         2310.00 strike + 18.05 premium
 NVDA left in the vault           10.000000 NVDA   the vault is now underweight
 ```

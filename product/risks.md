@@ -3,14 +3,14 @@
 This is the full list. Most of these are not bugs and have no fix. They are the shape of writing covered calls against a tokenised security on a one-week clock, through contracts other people control.
 
 {% hint style="danger" %}
-**You can lose the collateral you deposit.** The Callhouse contracts are **not deployed and have not been audited**. The vault address will be published on [Contracts and addresses](../protocol/addresses.md) after deployment.
+**You can lose the collateral you deposit.** The Stonkhouse contracts are **not deployed and have not been audited**. The vault address will be published on [Contracts and addresses](../protocol/addresses.md) after deployment.
 {% endhint %}
 
 {% hint style="warning" %}
 * Premium is paid only if a buyer fills.
 * Assignment can take the collateral at the strike.
 * Stock Tokens are debt securities.
-* Callhouse is not available to US persons.
+* Stonkhouse is not available to US persons.
 {% endhint %}
 
 ## The ordinary outcomes
@@ -66,7 +66,7 @@ An oracle pause on the Stock Token stops the vault writing and listing, and noth
 
 ### USDG
 
-Premium and strike proceeds are paid in USDG, a third-party stablecoin, so you carry whatever risk USDG carries. USDG is an upgradeable contract whose admin, a timelock with a 24-hour delay, is outside Callhouse's control. A separate single key can pause USDG, freeze an address, and wipe the USDG balance of a frozen address, the vault's included. A paused USDG or a frozen address would stop USDG claims and USDG payouts until it is resolved. The vault is built so that a USDG-side problem with the protocol fee cannot block the close of a week.
+Premium and strike proceeds are paid in USDG, a third-party stablecoin, so you carry whatever risk USDG carries. USDG is an upgradeable contract whose admin, a timelock with a 24-hour delay, is outside Stonkhouse's control. A separate single key can pause USDG, freeze an address, and wipe the USDG balance of a frozen address, the vault's included. A paused USDG or a frozen address would stop USDG claims and USDG payouts until it is resolved. The vault is built so that a USDG-side problem with the protocol fee cannot block the close of a week.
 
 That protection covers the fee only. `rollClose` is the only function that redeems the Valorem claim, and it has no alternative unwind, rescue function or upgrade path. If redeeming the claim reverts, for example because USDG has frozen the vault's address on a week with strike proceeds to receive, or because the Stock Token issuer has frozen transfers, the collateral stays in Valorem and the redeem queue stays unsettled until the obstruction is lifted.
 
@@ -74,7 +74,7 @@ That protection covers the fee only. `rollClose` is the only function that redee
 
 ### Smart contract risk
 
-**The Callhouse contracts have not been audited.** An internal adversarial review across 13 surfaces raised 72 findings, of which 51 survived refutation. The contract defects recorded as fixed from it carry regression tests, and two more contract defects (lot size and redeem-queue fairness) found during documentation review on 2026-09-13 were fixed the same way. The project's documents do not say that every surviving finding was fixed. That review was done by the people who wrote the code. It is not an audit and does not substitute for one. An external audit is planned and has not happened.
+**The Stonkhouse contracts have not been audited.** An internal adversarial review across 13 surfaces raised 72 findings, of which 51 survived refutation. The contract defects recorded as fixed from it carry regression tests, and two more contract defects (lot size and redeem-queue fairness) found during documentation review on 2026-09-13 were fixed the same way. The project's documents do not say that every surviving finding was fixed. That review was done by the people who wrote the code. It is not an audit and does not substitute for one. An external audit is planned and has not happened.
 
 Valorem Clear was audited by Zellic in 2022–2023 under its former name, OptionSettlementEngine. That audit covers Valorem, not this vault. There is no proxy and no upgrade key, so a bug means a new vault and a migration, not a silent patch.
 
@@ -115,25 +115,25 @@ The NVDA feed is a US-equities 24/5 feed: it stops updating when the US equity m
 
 ## Third parties in the path
 
-Callhouse sits on contracts and services it does not control, and none of them can be overridden from the vault.
+Stonkhouse sits on contracts and services it does not control, and none of them can be overridden from the vault.
 
 | Dependency | What it does | What can go wrong |
 |---|---|---|
 | **Overcall registry** | Publishes the weekly cycle, strikes and deadlines for the NVDA market | It is controlled by a single third-party key. The vault refuses a malformed cycle: over 21 days, a lot size other than one token, or options that do not match the cycle. Those failures cost a skipped week. The vault does not second-guess strikes that sit inside its policy band. |
 | **Overcall listings API** | Shows the vault's listing to buyers on Overcall | It can reject or drop an order. An invisible listing is an unfilled week. The app's cycle page then offers the keeper's signed order instead, after checking it against the chain, but buyers browsing Overcall will not see it. |
 | **Valorem Clear** | Holds the collateral, mints the options, settles assignment | Its engine fee (15 bps of notional, currently off) can be switched on by a third party. The vault then stops writing until the admin accepts the fee. |
-| **Seaport 1.6** | The listing and fill contract | Third-party code outside Callhouse's control |
+| **Seaport 1.6** | The listing and fill contract | Third-party code outside Stonkhouse's control |
 | **Robinhood Chain** | The chain the vault runs on | A centralised sequencer. An outage near the book close means no live listing when buyers are looking. |
 
 ## Regulatory perimeter
 
-Callhouse is not available to US persons. The same perimeter applies as to the Stock Tokens, which are offered outside the United States under their issuer's own terms. Access is restricted by the Terms of Use, not by a technical control: there is no geoblock, no wallet screening and no accept step, and no know-your-customer process is run. You are responsible for your own eligibility and for any tax or reporting consequences. Nothing in these docs is investment, legal or tax advice, or an offer of securities.
+Stonkhouse is not available to US persons. The same perimeter applies as to the Stock Tokens, which are offered outside the United States under their issuer's own terms. Access is restricted by the Terms of Use, not by a technical control: there is no geoblock, no wallet screening and no accept step, and no know-your-customer process is run. You are responsible for your own eligibility and for any tax or reporting consequences. Nothing in these docs is investment, legal or tax advice, or an offer of securities.
 
 The legal documents are published on the public site:
 
-* **Terms of Use** at `callhouse.finance/terms`, covering both `callhouse.finance` and `app.callhouse.finance`. Using either domain is use under them. They also require you to be at least 18, able to enter a binding agreement, and not barred by sanctions or by the law of your jurisdiction. If you are in a jurisdiction where these instruments are not offered, do not use the interface.
-* **Privacy notice** at `callhouse.finance/privacy`.
-* **The perimeter disclosure** at `callhouse.finance/legal`.
+* **Terms of Use** at `stonkhouse.fun/terms`, covering both `stonkhouse.fun` and `app.stonkhouse.fun`. Using either domain is use under them. They also require you to be at least 18, able to enter a binding agreement, and not barred by sanctions or by the law of your jurisdiction. If you are in a jurisdiction where these instruments are not offered, do not use the interface.
+* **Privacy notice** at `stonkhouse.fun/privacy`.
+* **The perimeter disclosure** at `stonkhouse.fun/legal`.
 
 The documents in force are version `v2-2026-09-13`. They were adopted by the project owner without review by counsel. **No operating entity and no governing law have been designated yet**, and the pages say so in words rather than naming a placeholder. The contracts themselves are on a public chain and are not governed by the Terms.
 

@@ -1,7 +1,7 @@
 # Security and audits
 
 {% hint style="warning" %}
-**The Callhouse contracts are unaudited and not deployed.** No external security firm has reviewed them. The reviews and tests described below were done by the team and are not a substitute for an audit.
+**The Stonkhouse contracts are unaudited and not deployed.** No external security firm has reviewed them. The reviews and tests described below were done by the team and are not a substitute for an audit.
 {% endhint %}
 
 Source paths refer to the `callhouse-contracts` repository unless marked as the app repository. The threat model and review record are kept in `SECURITY.md` there, and the audit scope in `docs/AUDIT-SCOPE.md`.
@@ -139,6 +139,6 @@ The audit commit will be pinned and tagged at engagement. This page will be upda
 
 Do not open a public issue.
 
-Send reports to **security@callhouse.finance**. The same address is published at `https://callhouse.finance/.well-known/security.txt` (RFC 9116) and on `https://callhouse.finance/legal#reporting` (`SECURITY.md` §6). Do not rely on addresses found elsewhere. `callhouse.xyz` is not a Callhouse domain.
+Send reports to **security@stonkhouse.fun**. The same address is published at `https://stonkhouse.fun/.well-known/security.txt` (RFC 9116) and on `https://stonkhouse.fun/legal#reporting` (`SECURITY.md` §6). Do not rely on addresses found elsewhere. `callhouse.xyz` is not a Stonkhouse domain.
 
 A bug bounty with a dedicated disclosure channel is planned to open in mainnet week 2. Until then the contracts are unaudited and no bounty is offered.

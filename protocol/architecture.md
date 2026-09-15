@@ -1,6 +1,6 @@
 # Architecture
 
-Callhouse is one non-upgradeable vault contract on Robinhood Chain (chain id 4663). It pools NVDA Stock Tokens and runs a covered-call cycle on them. Each cycle it writes call options on Valorem Clear against the idle collateral, lists them on Seaport 1.6 in the shape Overcall's order book uses, and pays the USDG premium to shareholders through a per-share index. Off-chain services support it: a keeper, an indexer, a web app, and a small alert relay that forwards keeper alerts to chat. None of them holds or can move depositor funds.
+Stonkhouse is one non-upgradeable vault contract on Robinhood Chain (chain id 4663). It pools NVDA Stock Tokens and runs a covered-call cycle on them. Each cycle it writes call options on Valorem Clear against the idle collateral, lists them on Seaport 1.6 in the shape Overcall's order book uses, and pays the USDG premium to shareholders through a per-share index. Off-chain services support it: a keeper, an indexer, a web app, and a small alert relay that forwards keeper alerts to chat. None of them holds or can move depositor funds.
 
 This page covers the components, the phase machine, and the behaviours that integrators most often misread. Money maths is on [Accounting](accounting.md), permissions are on [Roles and admin powers](roles.md), and addresses are on [Contracts and addresses](addresses.md).
 
@@ -42,7 +42,7 @@ Source paths on this page refer to the `callhouse-contracts` repository (`src/`,
 
 ### The vault and what it inherits
 
-`Vault` is the only contract Callhouse deploys, apart from its two linked libraries. It is an ERC-20 share token (the deploy script's default name and symbol are `Callhouse NVDA` / `cNVDA`, with 18 decimals). It also uses OpenZeppelin `AccessControl` and `ReentrancyGuard`, and it inherits three abstract bases:
+`Vault` is the only contract Stonkhouse deploys, apart from its two linked libraries. It is an ERC-20 share token (the deploy script's default name and symbol are `Callhouse NVDA` / `cNVDA`, with 18 decimals; the name was set before the product was renamed to Stonkhouse). It also uses OpenZeppelin `AccessControl` and `ReentrancyGuard`, and it inherits three abstract bases:
 
 | Base | Job |
 |---|---|
