@@ -1,8 +1,8 @@
 # FAQ
 
-### Is Stonkhouse live? Where is the vault address?
+### Is Stonkhouse live? Where is the factory?
 
-Yes. The vault has been live on Robinhood Chain since 2026-09-15 at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`, and the app at `app.stonkhouse.fun` uses it. Its on-chain token name is still `Callhouse NVDA` (`cNVDA`), from before the rename. Deposits are capped at 20 NVDA in total, a figure the admin can change. The contracts have had no external audit, and the admin role is one hot key with no timelock. Check every address on [Contracts and addresses](../protocol/addresses.md) and trust no other source.
+Yes. Factory `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb` on Robinhood Chain. Deposit at `app.stonkhouse.fun/account`. Buy at `app.stonkhouse.fun/book`. Check every address on [Contracts and addresses](../protocol/addresses.md).
 
 ### Is it audited?
 
@@ -10,11 +10,11 @@ No. No external audit firm has reviewed the contracts yet. An external audit is 
 
 ### What does a week pay?
 
-Whatever buyers actually paid for that week's calls, less the protocol fee, and nothing if nobody bought. Premium is paid only if a buyer fills. Stonkhouse does not publish an APY, an APR or any annualised figure, and these docs contain no projections. Every closed week is published on the app's Activity page with the premium the vault received in USDG and the net premium after the protocol fee, including the weeks that paid zero. On an assigned week the strike proceeds are shown separately and left out of every premium figure, because they are your collateral sold at the strike, not premium. The app also shows each week's net premium per cNVDA and net premium as a share of the collateral, valued at spot at harvest. Both cover that week only, are never annualised, and leave out strike proceeds.
+Whatever a buyer paid for **your** listed NVDA, less 5%, and nothing if nobody bought. Premium is paid only if a buyer fills. Stonkhouse does not publish an APY or an APR.
 
 ### What happens in a week nobody buys?
 
-The premium is zero and no fee is charged. Nothing is written either: the vault writes calls only inside a buyer's fill, so an unsold week locks no NVDA in Valorem, opens no claim and cannot be assigned. The week closes flat and instant redemption opens again. An unfilled week is the most likely outcome on a thin market, and it is a normal week, not an error.
+You keep the stock. Nothing is written. No fee.
 
 ### Why was my fill refused?
 

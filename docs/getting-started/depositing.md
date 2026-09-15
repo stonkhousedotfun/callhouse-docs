@@ -7,7 +7,7 @@ A deposit sends NVDA Stock Tokens into **your isolated account**. They sit idle 
 {% endhint %}
 
 {% hint style="info" %}
-The factory is live at `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7`. Each account is capped at 20 NVDA. Every address is on [Contracts and addresses](../protocol/addresses.md).
+The factory is live at `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb`. Every address is on [Contracts and addresses](../protocol/addresses.md).
 {% endhint %}
 
 ## What you need
@@ -23,24 +23,9 @@ The factory is live at `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7`. Each accoun
 1. Open `app.stonkhouse.fun/account` and connect MetaMask or Phantom. Switch to Robinhood Chain (4663) if asked.
 2. Create your account if you do not have one.
 3. Enter the amount of NVDA to deposit. Approve exactly that amount, then deposit.
-4. Request how many 1-NVDA lots to write this week. The keeper lists one full Seaport order per lot.
+4. Set how much is for sale this week, then **List this week** (or wait for the keeper).
 
-## What you receive
-
-You receive cNVDA shares. cNVDA is an ERC-20 token with 18 decimals, the same as the Stock Token. Its on-chain name is "Callhouse NVDA", set before the rename.
-
-The number of shares is your deposit divided by the vault's current NVDA per share, rounded down. The vault's first deposit minted one share per NVDA. After that, deposits and redemptions leave the share price unchanged, apart from rounding; it falls when NVDA leaves without shares being burned, as in an assignment. Rounding always favours the vault, so you can never round your way to more than you put in.
-
-The share price counts the vault's idle NVDA plus NVDA locked in this week's Valorem claim, minus NVDA already set aside for settled redemptions, and never reads below zero. While a claim is stranded, only the part of it still owed to live shares counts. It does not include USDG. Premium is tracked separately; see [Claiming USDG](claiming-usdg.md).
-
-## Depositing while a week is listed
-
-A week is listed from `rollOpen` until its exercise timestamp. Deposits stay open in that time, and a deposit then buys into the week as it stands.
-
-* **Your NVDA can be written that week.** Every fill sizes itself against all the NVDA the vault holds at that moment, so a fill after your deposit can lock your NVDA behind a call sold after you arrived.
-* **Your shares carry the week's result from the moment they are minted.** Premium from fills after your deposit, and the effect of any assignment (a lower NVDA share price plus a share of the strike USDG), reach every share, yours included, whether or not your own NVDA was written.
-* **You do not share premium already in the vault.** Before minting your shares, the deposit folds any premium that has reached the vault into the per-share USDG index, taking the protocol fee on it. Your shares start from that point.
-* **You cannot leave instantly until the week closes.** While a week is listed, the only exit is the [redeem queue](withdrawing.md).
+Idle NVDA is still yours. Only the amount you list can be sold. See [Withdrawing](withdrawing.md) and [Claiming USDG](claiming-usdg.md).
 
 {% hint style="warning" %}
 **A deposit while a week is listed is priced at face value.** The share price counts the NVDA locked behind this week's calls at full value and does not subtract what the calls already sold could cost. If NVDA is already near or above the strike when you deposit, you pay full price for shares whose collateral may leave at the strike, and part of that loss is yours. Depositing while the vault is Idle avoids this.

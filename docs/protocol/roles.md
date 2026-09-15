@@ -160,7 +160,7 @@ The checks are listed in [Architecture](architecture.md#the-seaport-zone-hooks).
 | `rollClose()` | anyone | `Listed` or `Exercisable`, `block.timestamp >= cycleExpiryTs + 1 hour` (the keeper from `cycleExpiryTs`) |
 | `retryStrandedClaim()` | anyone | `isStranded()`; reverts `StillStranded` until Valorem lets the redeem through |
 | `sweepFee()` | anyone | `pendingFeeUsdg > 0` and the transfer succeeds. It always pays the stored `feeRecipient`, never the caller. |
-| A Seaport 1.6 fill of the vault's listing | anyone | Through any Seaport fulfil function, including the app's cycle page (`app.stonkhouse.fun/vault/nvda/cycle`). The zone hooks apply. |
+| A Seaport 1.6 fill of a user's listing | anyone | Through any Seaport fulfil function, including the app's book (`app.stonkhouse.fun/book`). The account's zone hooks apply. |
 | ERC-20 `transfer` / `approve` / `transferFrom` on shares | holders | USDG accrual is settled for both sides on every transfer. Shares sent to the vault address are lost to the sender (see [Architecture](architecture.md#things-that-look-wrong-but-are-not)). |
 
 Because `lockBook`, `rollClose`, `settleQueue` and `retryStrandedClaim` are permissionless, settlement, the redeem queue and recovery from a stranded claim do not depend on the keeper or the guardian staying alive.
