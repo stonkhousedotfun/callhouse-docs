@@ -25,7 +25,7 @@ The app shows "instant path open" or "queue only" based on the vault's `canRedee
 
 ### Step by step
 
-1. Open the NVDA vault at `app.callhouse.finance` and connect your wallet.
+1. Open the NVDA vault at `app.stonkhouse.fun` and connect your wallet.
 2. Enter the number of cNVDA shares to redeem. The app shows "Redeem now" when the instant path is open.
 3. Confirm. Your shares burn and NVDA is sent to you in the same transaction.
 
@@ -92,7 +92,7 @@ NVDA set aside for settled redemptions is senior to live shares, but the Stock T
 
 ### Stranded claims and your queue
 
-If the week's claim is stranded (see [How Callhouse works](how-it-works.md#when-the-claim-cannot-be-redeemed)), instant redemption stays off until the claim is redeemed, and the queue is the exit. An epoch settled while the claim is stranded, at that `rollClose` or by a later `settleQueue`, is paid in two parts:
+If the week's claim is stranded (see [How Stonkhouse works](how-it-works.md#when-the-claim-cannot-be-redeemed)), instant redemption stays off until the claim is redeemed, and the queue is the exit. An epoch settled while the claim is stranded, at that `rollClose` or by a later `settleQueue`, is paid in two parts:
 
 1. **Now:** its share of the idle NVDA, and the USDG its escrowed shares earned. `completeRedeem` pays these straight away.
 2. **When the claim is redeemed:** a pro-rata share of the stranded claim, recorded as `EpochStrandShare`. It becomes NVDA and USDG only when someone's `retryStrandedClaim()` succeeds. Your next `completeRedeem` after that pays it.
@@ -113,7 +113,7 @@ You have one queue slot per account. If you queue again after an earlier epoch h
 
 ## Why withdrawals queue at all
 
-While a week has calls sold, the NVDA behind them is locked in Valorem until expiry. The vault cannot hand it back early, and it will not quote a price for a position whose outcome depends on whether holders exercise. The queue is the mechanism, not a discretionary gate. No Callhouse key can jump it or stop it. The token issuers are outside Callhouse's control: a Stock Token restriction can hold up the NVDA leg of a payout until it lifts, and a USDG restriction can defer the USDG leg or strand the week's claim. See [Risks](../product/risks.md).
+While a week has calls sold, the NVDA behind them is locked in Valorem until expiry. The vault cannot hand it back early, and it will not quote a price for a position whose outcome depends on whether holders exercise. The queue is the mechanism, not a discretionary gate. No Stonkhouse key can jump it or stop it. The token issuers are outside Stonkhouse's control: a Stock Token restriction can hold up the NVDA leg of a payout until it lifts, and a USDG restriction can defer the USDG leg or strand the week's claim. See [Risks](../product/risks.md).
 
 Do not send cNVDA to the vault's own address. That is not a withdrawal request: shares sent there are never burned or paid out, so they are lost. cNVDA is not listed anywhere, so there is no secondary market to sell into instead.
 

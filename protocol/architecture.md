@@ -1,6 +1,6 @@
 # Architecture
 
-Callhouse is one non-upgradeable vault contract on Robinhood Chain (chain id 4663). It pools NVDA Stock Tokens and runs a weekly covered call on them. Each week it arms a Valorem call option type, lists those calls on Seaport 1.6 as an order whose zone is the vault itself, and writes calls into Valorem only when a buyer fills, exactly the number bought. The USDG premium is paid to shareholders through a per-share index. Off-chain services support it: a keeper, an indexer, a web app with the fill page, and a small alert relay. None of them holds or can move depositor funds.
+Stonkhouse is one non-upgradeable vault contract on Robinhood Chain (chain id 4663). It pools NVDA Stock Tokens and runs a weekly covered call on them. Each week it arms a Valorem call option type, lists those calls on Seaport 1.6 as an order whose zone is the vault itself, and writes calls into Valorem only when a buyer fills, exactly the number bought. The USDG premium is paid to shareholders through a per-share index. Off-chain services support it: a keeper, an indexer, a web app with the fill page, and a small alert relay. None of them holds or can move depositor funds.
 
 This page covers the components, the Seaport zone hooks, the phase machine, and the behaviours that integrators most often misread. Money maths is on [Accounting](accounting.md), permissions are on [Roles and admin powers](roles.md), and addresses are on [Contracts and addresses](addresses.md).
 
@@ -48,7 +48,7 @@ Source paths on this page refer to the `callhouse-contracts` repository (`src/`,
 
 ### The vault and what it inherits
 
-`Vault` is the only contract Callhouse deploys for the product, apart from its two linked libraries and, at launch, its own Valorem clearinghouse instance (see [The clearinghouse](#the-clearinghouse-is-a-deploy-time-choice)). It is an ERC-20 share token (the deploy script's default name and symbol are `Callhouse NVDA` / `cNVDA`, with 18 decimals). It also uses OpenZeppelin `AccessControl` and `ReentrancyGuard`, and it inherits three abstract bases:
+`Vault` is the only contract Stonkhouse deploys for the product, apart from its two linked libraries and, at launch, its own Valorem clearinghouse instance (see [The clearinghouse](#the-clearinghouse-is-a-deploy-time-choice)). It is an ERC-20 share token (the deploy script's default name and symbol are `Callhouse NVDA` / `cNVDA`, with 18 decimals; the name was set before the product was renamed to Stonkhouse). It also uses OpenZeppelin `AccessControl` and `ReentrancyGuard`, and it inherits three abstract bases:
 
 | Base | Job |
 |---|---|
@@ -86,9 +86,9 @@ Addresses for all of these are on [Contracts and addresses](addresses.md).
 
 ### The clearinghouse is a deploy-time choice
 
-The vault takes its clearinghouse as a constructor argument and reads every option fact it needs from it (`src/Vault.sol` `Config`). `script/Deploy.s.sol` accepts any instance whose `feeBps()` is 15, whose fee switch is off and which is ERC-1155. `script/DeployClear.s.sol` deploys a Callhouse-owned instance from the vendored upstream Valorem artifact (commit `6436c823`), with `feeTo` set to the address passed as `CLEAR_FEE_TO`: the vault admin, in the launch plan.
+The vault takes its clearinghouse as a constructor argument and reads every option fact it needs from it (`src/Vault.sol` `Config`). `script/Deploy.s.sol` accepts any instance whose `feeBps()` is 15, whose fee switch is off and which is ERC-1155. `script/DeployClear.s.sol` deploys a Stonkhouse-owned instance from the vendored upstream Valorem artifact (commit `6436c823`), with `feeTo` set to the address passed as `CLEAR_FEE_TO`: the vault admin, in the launch plan.
 
-**The launch plan uses Callhouse's own instance** (`SECURITY.md` §3; the internal review of 2026-09-14, finding I-01). One consequence is that the vault admin holds both ends of the Valorem engine fee: the switch on the clearinghouse and `acceptValoremFee` on the vault. That is covered on [Roles and admin powers](roles.md#the-valorem-engine-fee-on-our-own-clearinghouse) and [Security and audits](security.md#what-each-key-compromise-buys).
+**The launch plan uses Stonkhouse's own instance** (`SECURITY.md` §3; the internal review of 2026-09-14, finding I-01). One consequence is that the vault admin holds both ends of the Valorem engine fee: the switch on the clearinghouse and `acceptValoremFee` on the vault. That is covered on [Roles and admin powers](roles.md#the-valorem-engine-fee-on-our-own-clearinghouse) and [Security and audits](security.md#what-each-key-compromise-buys).
 
 ### Not upgradeable
 
@@ -269,7 +269,7 @@ The keeper only proposes. The vault re-checks every field against its own state 
 
 **Indexer.** A Ponder indexer (`indexer/README.md` in the app repository). It reads vault, Valorem, Seaport and Stock Token events and serves a read-only JSON API: `/v1/vault`, `/v1/cycles`, `/v1/cycles/:cycle`, `/v1/activity`, `/v1/account/:addr`, `/v1/listings`, `/v1/listings/:hash`, `/v1/strands`, `/v1/snapshots` and `/v1/health`. A week nobody bought is published as a row of zeros, not left out. The week's size is the sum of its `CallsWritten` events, stranded weeks and their recovery are published, and premium is kept separate from strike proceeds. It holds no keys that can act on the vault.
 
-**Web app and the fill page.** A Next.js app at `app.callhouse.finance` (`web/README.md` in the app repository). Deposits, queued withdrawals, redemptions, claims, settling the queue and retrying a stranded claim are all transactions the user signs in their own wallet. The fill page, `/vault/nvda/cycle`, is the venue for the vault's calls. Its server route fetches the keeper's `/orders` and serves an order only if it rebuilds to the vault's own `listingHash` on chain. The page then simulates the exact fill with `eth_call`, shows a decoded refusal if the vault would refuse it, and fills with a USDG approval to Seaport followed by `fulfillAdvancedOrder`. Any other Seaport 1.6 client can fill the same order. The app has no custody, no private keys and no server-side signing.
+**Web app and the fill page.** A Next.js app at `app.stonkhouse.fun` (`web/README.md` in the app repository). Deposits, queued withdrawals, redemptions, claims, settling the queue and retrying a stranded claim are all transactions the user signs in their own wallet. The fill page, `/vault/nvda/cycle`, is the venue for the vault's calls. Its server route fetches the keeper's `/orders` and serves an order only if it rebuilds to the vault's own `listingHash` on chain. The page then simulates the exact fill with `eth_call`, shows a decoded refusal if the vault would refuse it, and fills with a USDG approval to Seaport followed by `fulfillAdvancedOrder`. Any other Seaport 1.6 client can fill the same order. The app has no custody, no private keys and no server-side signing.
 
 **Alert relay.** A small HTTP service (`relay/` in the app repository) with `GET /health` and `POST /alert`. The keeper sends its alerts there with a shared bearer token; the relay forwards them to Discord and/or Telegram. It holds no vault keys and cannot act on the vault.
 

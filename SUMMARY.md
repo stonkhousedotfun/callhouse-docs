@@ -4,7 +4,7 @@
 
 ## Getting started
 
-* [How Callhouse works](getting-started/how-it-works.md)
+* [How Stonkhouse works](getting-started/how-it-works.md)
 * [Depositing](getting-started/depositing.md)
 * [Withdrawing and the redeem queue](getting-started/withdrawing.md)
 * [Claiming USDG](getting-started/claiming-usdg.md)

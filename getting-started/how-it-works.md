@@ -1,9 +1,9 @@
-# How Callhouse works
+# How Stonkhouse works
 
-Callhouse runs one trade a week: it sells covered calls on pooled NVDA Stock Tokens and passes the USDG premium to depositors. The keeper picks each week's option, the vault checks it against its own rules and numbers its own weeks, and no outside party decides either. Calls are written only when a buyer fills, so the vault never holds a call it has not sold.
+Stonkhouse runs one trade a week: it sells covered calls on pooled NVDA Stock Tokens and passes the USDG premium to depositors. The keeper picks each week's option, the vault checks it against its own rules and numbers its own weeks, and no outside party decides either. Calls are written only when a buyer fills, so the vault never holds a call it has not sold.
 
 {% hint style="warning" %}
-Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities. Callhouse is not available to US persons.
+Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities. Stonkhouse is not available to US persons.
 {% endhint %}
 
 ## The week in six steps
@@ -25,7 +25,7 @@ Then the keeper creates the next week's option and the loop repeats. At 16:00 Ne
 ## Where the money goes
 
 ```
-  You ──── NVDA ────► Callhouse vault ──── cNVDA ────► You
+  You ──── NVDA ────► Stonkhouse vault ─── cNVDA ────► You
                             │
         rollOpen: arm this week's option type, write nothing
                             │

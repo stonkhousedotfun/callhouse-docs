@@ -3,7 +3,7 @@
 Each week the vault sells covered calls on the NVDA Stock Token for USDG. This page is for buyers: what the calls are, where they are sold, what a fill does, what it costs in gas, why a fill can be refused, and how to exercise.
 
 {% hint style="warning" %}
-**Before you buy:** A call that ends the week out of the money expires worthless, and the premium you paid is gone. The underlying is the NVDA Stock Token, which is a debt security issued by Robinhood Assets (Jersey) Limited, not an Nvidia share. Callhouse is not available to US persons. The contracts are unaudited. Nothing here is investment advice.
+**Before you buy:** A call that ends the week out of the money expires worthless, and the premium you paid is gone. The underlying is the NVDA Stock Token, which is a debt security issued by Robinhood Assets (Jersey) Limited, not an Nvidia share. Stonkhouse is not available to US persons. The contracts are unaudited. Nothing here is investment advice.
 {% endhint %}
 
 {% hint style="info" %}
@@ -30,7 +30,7 @@ By default the keeper asks the vault's premium floor at the spot of the listing 
 
 There are two ways to fill the vault's order, and no other venue. There is no order-book API, no third-party fee, and nothing to sign: the vault validated the order on Seaport by hash, and Seaport skips the signature check for a validated order.
 
-1. **The app's fill page,** `app.callhouse.finance/vault/nvda/cycle`. It reads the week's option and the vault's authorised order from the chain, fetches the order's full parameters from the keeper, and checks them against the chain: the order must hash to the vault's authorised order, name the vault as offerer and zone, and pay USDG to the vault and nobody else. It then simulates your exact fill from your address and enables the button only if the simulation passes.
+1. **The app's fill page,** `app.stonkhouse.fun/vault/nvda/cycle`. It reads the week's option and the vault's authorised order from the chain, fetches the order's full parameters from the keeper, and checks them against the chain: the order must hash to the vault's authorised order, name the vault as offerer and zone, and pay USDG to the vault and nobody else. It then simulates your exact fill from your address and enables the button only if the simulation passes.
 2. **Any Seaport 1.6 client.** The fill card shows the raw order. With it, call `fulfillAdvancedOrder` on Seaport 1.6 with numerator k (the contracts you want) and denominator N (the order's size), an empty signature, empty extra data, no criteria resolvers, a zero conduit key, and your receiving address, after approving k × the unit price of USDG to Seaport. The Seaport address is on [Contracts and addresses](../protocol/addresses.md).
 
 ## The order
@@ -88,7 +88,7 @@ Other reasons a fill can be refused: the sale window has closed (`WriteWindowClo
 
 ## Exercising
 
-Exercise happens on the Valorem clearinghouse, not through Callhouse. The app does not send exercise transactions; use a block explorer's contract page or your own tooling.
+Exercise happens on the Valorem clearinghouse, not through Stonkhouse. The app does not send exercise transactions; use a block explorer's contract page or your own tooling.
 
 1. Between the exercise timestamp and expiry, approve k × the strike in USDG to the clearinghouse. If its engine fee were switched on, add 15 bps of that amount.
 2. Call `exercise(optionId, k)` on the clearinghouse. It burns your k option tokens, takes the USDG, and sends you k NVDA Stock Tokens.
@@ -101,13 +101,13 @@ In the fork rehearsal, with spot set to 228 on the fork, a buyer approved 446 US
 
 ## Who can buy, and with what account
 
-* Callhouse is not available to US persons, and that includes buying the vault's calls.
+* Stonkhouse is not available to US persons, and that includes buying the vault's calls.
 * Your receiving address must accept ERC-1155 tokens. An ordinary wallet does. A contract must implement the ERC-1155 receiver hooks, and an address with an EIP-7702 delegation accepts only what its delegate's code allows; if it refuses, the fill reverts.
 * A contract that fills cannot deposit into the vault in the same transaction. See [Depositing](../getting-started/depositing.md#a-deposit-inside-a-fill-is-refused).
 
 ## Related
 
-* [How Callhouse works](../getting-started/how-it-works.md)
+* [How Stonkhouse works](../getting-started/how-it-works.md)
 * [The weekly cycle](weekly-cycle.md)
 * [Assignment](assignment.md)
 * [Launch policy and hard caps](policy.md)

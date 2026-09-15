@@ -102,7 +102,7 @@ A compiled constant, not a setting. If the vault has lost almost everything whil
 
 ### Valorem engine fee: not accepted
 
-Valorem can charge 15 bps of notional on writes. Unlike the protocol fee, it is not taken out of premium: it is paid in NVDA from the vault's balance on top of the collateral, on every fill. It is off today. If it is switched on, the vault stops arming weeks and accepting fills until the admin explicitly accepts it (`acceptValoremFee(true)`). With Callhouse's own clearinghouse, the same admin key holds the switch on the clearinghouse and the acceptance on the vault. See [Fees](fees.md#who-holds-the-valorem-fee-switch).
+Valorem can charge 15 bps of notional on writes. Unlike the protocol fee, it is not taken out of premium: it is paid in NVDA from the vault's balance on top of the collateral, on every fill. It is off today. If it is switched on, the vault stops arming weeks and accepting fills until the admin explicitly accepts it (`acceptValoremFee(true)`). With Stonkhouse's own clearinghouse, the same admin key holds the switch on the clearinghouse and the acceptance on the vault. See [Fees](fees.md#who-holds-the-valorem-fee-switch).
 
 ## Related
 

@@ -192,7 +192,7 @@ Details and worst cases per key: [Roles and admin powers](../protocol/roles.md).
 
 ## Related
 
-* [How Callhouse works](../getting-started/how-it-works.md)
+* [How Stonkhouse works](../getting-started/how-it-works.md)
 * [Buying calls](buying-calls.md)
 * [Launch policy and hard caps](policy.md)
 * [Roles and admin powers](../protocol/roles.md)

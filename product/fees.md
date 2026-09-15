@@ -1,6 +1,6 @@
 # Fees
 
-Callhouse charges one fee: **5% of the premium** buyers pay. Premium exists only when a buyer fills, so a week with no buyer is charged nothing. There is no venue fee. Every listing has a single payment item, USDG to the vault, so the price a buyer pays and the premium the vault receives are the same figure.
+Stonkhouse charges one fee: **5% of the premium** buyers pay. Premium exists only when a buyer fills, so a week with no buyer is charged nothing. There is no venue fee. Every listing has a single payment item, USDG to the vault, so the price a buyer pays and the premium the vault receives are the same figure.
 
 Valorem's engine fee works differently. It is not taken out of premium, and it is off today. The vault refuses to arm a week or accept a fill while it is on, unless the vault admin has accepted it. If it were ever switched on and accepted, it would be 15 bps of each fill's notional, paid in NVDA from the vault's balance on top of the collateral, and the vault would raise the minimum price of every fill by that fee's value at spot, so that the buyer pays for it in USDG.
 
@@ -9,21 +9,21 @@ Valorem's engine fee works differently. It is not taken out of premium, and it i
 {% endhint %}
 
 {% hint style="warning" %}
-Premium is paid only if a buyer fills. The protocol fee reduces what a filled week pays you. It is never charged on your deposit, on idle NVDA, or on strike proceeds from assignment. The Valorem engine fee, off and not accepted today, would take NVDA out of the vault on every fill if it were switched on and accepted. The fill's minimum price rises to cover its value in USDG, but the NVDA itself still leaves the vault. With Callhouse's own clearinghouse, one admin key holds both switches.
+Premium is paid only if a buyer fills. The protocol fee reduces what a filled week pays you. It is never charged on your deposit, on idle NVDA, or on strike proceeds from assignment. The Valorem engine fee, off and not accepted today, would take NVDA out of the vault on every fill if it were switched on and accepted. The fill's minimum price rises to cover its value in USDG, but the NVDA itself still leaves the vault. With Stonkhouse's own clearinghouse, one admin key holds both switches.
 {% endhint %}
 
 ## Fee table
 
 | Charged by | Size | When | How |
 |---|---|---|---|
-| **Callhouse protocol fee** | 5% of premium (500 basis points) | Whenever premium is harvested, and only when it is above zero | Accrued inside the vault at each harvest (a deposit, `settleQueue`, `rollClose`, or a stranded-claim retry), pushed to the fee recipient at `rollClose` or the retry, and otherwise collectable by anyone with `sweepFee()` |
+| **Stonkhouse protocol fee** | 5% of premium (500 basis points) | Whenever premium is harvested, and only when it is above zero | Accrued inside the vault at each harvest (a deposit, `settleQueue`, `rollClose`, or a stranded-claim retry), pushed to the fee recipient at `rollClose` or the retry, and otherwise collectable by anyone with `sweepFee()` |
 | **Valorem engine fee** | 15 bps of notional (minimum 1 base unit): in NVDA on each write, in USDG on each exercise | Off. If switched on and accepted: on every fill, top-ups of the same claim included, and on every exercise, paid by the exerciser | Pulled by the clearinghouse into its own fee balance, which only the clearinghouse's fee holder can sweep. While it is on and not accepted, `rollOpen` and every fill revert |
 
 ### Who holds the Valorem fee switch
 
 A Valorem clearinghouse has one privileged key, its fee holder (`feeTo`). That key can switch the engine fee on and off, sweep the fees collected, change the metadata renderer and nominate its own successor. It cannot touch collateral, and the clearinghouse has no pause, no blocklist and no upgrade path. The rate is fixed at 15 bps; only on or off can change.
 
-The launch plan deploys Callhouse's own instance of the unmodified upstream Valorem clearinghouse, with its fee holder set to the vault admin. The deploy scripts refuse to continue if the switch is on. The vault's clearinghouse is fixed when the vault is deployed, and its address will be published on [Contracts and addresses](../protocol/addresses.md).
+The launch plan deploys Stonkhouse's own instance of the unmodified upstream Valorem clearinghouse, with its fee holder set to the vault admin. The deploy scripts refuse to continue if the switch is on. The vault's clearinghouse is fixed when the vault is deployed, and its address will be published on [Contracts and addresses](../protocol/addresses.md).
 
 With that setup, **one admin key can**, immediately and with no timelock:
 
@@ -58,7 +58,7 @@ The keeper armed a 223 USDG strike and listed 14 contracts at 0.856189 USDG each
 
 ```
 Premium paid by buyers            4.280945 USDG   0.856189 x 5
-  Callhouse protocol fee 5%       0.214047        floor(4.280945 x 5%)
+  Stonkhouse protocol fee 5%      0.214047        floor(4.280945 x 5%)
   Premium to depositors           4.066898
 
 Strike proceeds                 446.000000 USDG   223 x 2, fee-free

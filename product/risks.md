@@ -3,14 +3,14 @@
 This is the full list. Most of these are not bugs and have no fix. They are the shape of writing covered calls against a tokenised security on a one-week clock, through contracts and tokens other people control.
 
 {% hint style="danger" %}
-**You can lose the collateral you deposit.** The Callhouse contracts are **not deployed and are unaudited**: no external firm has audited them, and none is planned. The vault address will be published on [Contracts and addresses](../protocol/addresses.md) after deployment.
+**You can lose the collateral you deposit.** The Stonkhouse contracts are **not deployed and are unaudited**: no external firm has audited them, and none is planned. The vault address will be published on [Contracts and addresses](../protocol/addresses.md) after deployment.
 {% endhint %}
 
 {% hint style="warning" %}
 * Premium is paid only if a buyer fills.
 * Assignment can take the collateral at the strike.
 * Stock Tokens are debt securities.
-* Callhouse is not available to US persons.
+* Stonkhouse is not available to US persons.
 {% endhint %}
 
 ## The ordinary outcomes
@@ -61,7 +61,7 @@ Instant redemption is off from the moment a week is armed until it closes, becau
 
 Premium and strike proceeds are paid in USDG, a stablecoin issued by Paxos, so you carry whatever risk USDG carries. On Robinhood Chain a single address with no contract code, so no on-chain multisig, holds every operational power over USDG, and each of these works immediately:
 
-| Power | What it does to a Callhouse week |
+| Power | What it does to a Stonkhouse week |
 |---|---|
 | **Pause** USDG | No USDG moves anywhere: no fill can pay, no holder can pay the strike to exercise, and no USDG claim, fee payment or USDG part of a redemption goes through. In a week with any assignment, `rollClose` cannot redeem the claim, and it is stranded. |
 | **Freeze** the vault | The vault can neither receive nor send USDG: fills fail, USDG claims fail, the USDG part of settled redemptions is deferred, and the protocol fee waits. In a week with any assignment, the claim is stranded. |
@@ -137,11 +137,11 @@ The vault runs on Robinhood Chain, which has a single sequencer run by Robinhood
 
 ### Smart contract risk
 
-**The Callhouse contracts are unaudited.** No external firm has audited them, and none is planned. What stands behind them is internal:
+**The Stonkhouse contracts are unaudited.** No external firm has audited them, and none is planned. What stands behind them is internal:
 
 * An adversarial review on 2026-09-12 across 13 surfaces raised 72 findings, of which 51 survived refutation. The contract defects fixed from it carry regression tests.
 * An internal audit on 2026-09-13 found five issues, the first of them High: the vault wrote calls before selling them, so anyone could write the same option into its bucket and take value by exercising. The contracts were redesigned the same day: calls are now written only when bought, the stranded-claim path was added, the two legs of a redemption were separated, and the share price was made honest under an issuer burn.
-* An internal audit of the redesigned contracts on 2026-09-14 found no Critical, High or Medium issue. It found one Low: a buyer that is a contract could deposit inside its own fill and take part of that fill's premium. Deposits are now refused in any transaction in which a fill has written. It also raised two Informational items: the admin's fee lever with Callhouse's own clearinghouse (see [Fees](fees.md#who-holds-the-valorem-fee-switch)), and documentation drift.
+* An internal audit of the redesigned contracts on 2026-09-14 found no Critical, High or Medium issue. It found one Low: a buyer that is a contract could deposit inside its own fill and take part of that fill's premium. Deposits are now refused in any transaction in which a fill has written. It also raised two Informational items: the admin's fee lever with Stonkhouse's own clearinghouse (see [Fees](fees.md#who-holds-the-valorem-fee-switch)), and documentation drift.
 * The test suite: unit, regression and invariant tests, and tests on a fork of Robinhood Chain that fill through the live Seaport, exercise on real Valorem code, close an unfilled week, and strand and recover a claim under a real USDG freeze.
 
 All of this was done by the project itself. None of it is an external audit, and none of it substitutes for one. There is no proxy and no upgrade key, so a bug means a new vault and a migration, not a silent patch.
@@ -174,7 +174,7 @@ Mitigations considered and **not** implemented: a timelock on admin actions, hig
 
 ### Admin judgment and admin key compromise
 
-The vault admin sets policy inside the compiled caps: the strike band, the premium floor, the utilisation limit, the protocol fee, the contract cap, the deposit cap, the price-age limit, the fee recipient, and whether to accept Valorem's engine fee. It halts and unhalts, and grants and revokes every role, the keeper's included. At launch the admin is a single deployer key, until the role is handed to a 2-of-3 Safe. With Callhouse's own clearinghouse, the same key also holds the clearinghouse's fee switch. There is no timelock on any of it.
+The vault admin sets policy inside the compiled caps: the strike band, the premium floor, the utilisation limit, the protocol fee, the contract cap, the deposit cap, the price-age limit, the fee recipient, and whether to accept Valorem's engine fee. It halts and unhalts, and grants and revokes every role, the keeper's included. At launch the admin is a single deployer key, until the role is handed to a 2-of-3 Safe. With Stonkhouse's own clearinghouse, the same key also holds the clearinghouse's fee switch. There is no timelock on any of it.
 
 **Costs you:** the caps rule out the worst moves. Nobody can sell calls closer than 1% above spot, set the protocol fee above 20% of premium, charge a protocol fee on strike proceeds, or transfer a token out of the vault directly. They do not rule out bad settings inside the caps: a band set too tight means weeks with no sale, a band set too loose means routine assignment, and the deposit cap and the contract cap have no compiled ceiling.
 
@@ -192,34 +192,34 @@ Valorem Clear holds the collateral, mints the calls and settles assignment. Its 
 
 **Costs you:** a bug in Valorem would reach the collateral directly, and nobody upstream would fix it.
 
-### Callhouse's own clearinghouse instance
+### Stonkhouse's own clearinghouse instance
 
-The launch plan deploys Callhouse's own copy of the unmodified upstream clearinghouse, from the same source as upstream release v1.0.1, rather than an instance someone else operates. The clearinghouse has no owner, no pause, no blocklist and no proxy. Its one privileged key, the fee holder, is the vault admin. That key can switch the 15 bps engine fee on, sweep the fees collected, change the metadata renderer and nominate a successor, with no timelock, and a nomination emits no event until it is accepted. It cannot touch collateral.
+The launch plan deploys Stonkhouse's own copy of the unmodified upstream clearinghouse, from the same source as upstream release v1.0.1, rather than an instance someone else operates. The clearinghouse has no owner, no pause, no blocklist and no proxy. Its one privileged key, the fee holder, is the vault admin. That key can switch the 15 bps engine fee on, sweep the fees collected, change the metadata renderer and nominate a successor, with no timelock, and a nomination emits no event until it is accepted. It cannot touch collateral.
 
 **Costs you:** the engine-fee lever described on [Fees](fees.md#who-holds-the-valorem-fee-switch), in the hands of the same key that accepts the fee on the vault.
 
 ## Third parties in the path
 
-Callhouse sits on contracts and tokens it does not control, and none of them can be overridden from the vault.
+Stonkhouse sits on contracts and tokens it does not control, and none of them can be overridden from the vault.
 
 | Dependency | What it does | What can go wrong |
 |---|---|---|
 | **USDG** (Paxos) | Pays premium and strike proceeds | One key can pause, freeze, wipe or burn at once. A week with any assignment can strand; USDG owed can be destroyed. |
 | **NVDA Stock Token** (Robinhood Assets (Jersey) Limited) | The collateral | Single keys can pause, blocklist, burn, change the multiplier, upgrade every Stock Token, and end the Series on 30 days' notice. |
 | **Chainlink NVDA/USD feed** | Gates arming, listings and fills | No prints while the market is closed; a wrong price with a fresh timestamp passes every check; a 4-of-9 Safe controls its data source. |
-| **Valorem Clear** | Holds the collateral, mints the calls, settles assignment | Unmaintained upstream. On Callhouse's own instance, the vault admin holds the engine-fee switch. |
+| **Valorem Clear** | Holds the collateral, mints the calls, settles assignment | Unmaintained upstream. On Stonkhouse's own instance, the vault admin holds the engine-fee switch. |
 | **Seaport 1.6** | The listing and fill contract | Third-party code with no admin, no pause, no upgrade and no fee switch. The vault relies on Seaport calling it before every fill and after every transfer; no public audit of that part of Seaport 1.6 was found. |
 | **Robinhood Chain** | The chain the vault runs on | A single screening sequencer, force inclusion only after 4 days, and a Security Council that can change the rules. |
 
 ## Regulatory perimeter
 
-Callhouse is not available to US persons. The same perimeter applies as to the Stock Tokens, which are offered outside the United States under their issuer's own terms. Access is restricted by the Terms of Use, not by a technical control: there is no geoblock, no wallet screening and no accept step, and no know-your-customer process is run. You are responsible for your own eligibility and for any tax or reporting consequences. Nothing in these docs is investment, legal or tax advice, or an offer of securities.
+Stonkhouse is not available to US persons. The same perimeter applies as to the Stock Tokens, which are offered outside the United States under their issuer's own terms. Access is restricted by the Terms of Use, not by a technical control: there is no geoblock, no wallet screening and no accept step, and no know-your-customer process is run. You are responsible for your own eligibility and for any tax or reporting consequences. Nothing in these docs is investment, legal or tax advice, or an offer of securities.
 
 The legal documents are published on the public site:
 
-* **Terms of Use** at `callhouse.finance/terms`, covering both `callhouse.finance` and `app.callhouse.finance`. Using either domain is use under them. They also require you to be at least 18, able to enter a binding agreement, and not barred by sanctions or by the law of your jurisdiction. If you are in a jurisdiction where these instruments are not offered, do not use the interface.
-* **Privacy notice** at `callhouse.finance/privacy`.
-* **The perimeter disclosure** at `callhouse.finance/legal`.
+* **Terms of Use** at `stonkhouse.fun/terms`, covering both `stonkhouse.fun` and `app.stonkhouse.fun`. Using either domain is use under them. They also require you to be at least 18, able to enter a binding agreement, and not barred by sanctions or by the law of your jurisdiction. If you are in a jurisdiction where these instruments are not offered, do not use the interface.
+* **Privacy notice** at `stonkhouse.fun/privacy`.
+* **The perimeter disclosure** at `stonkhouse.fun/legal`.
 
 The documents in force are version `v2-2026-09-13`. They were adopted by the project owner without review by counsel. **No operating entity and no governing law have been designated yet**, and the pages say so in words rather than naming a placeholder. The contracts themselves are on a public chain and are not governed by the Terms.
 
