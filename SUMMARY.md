@@ -12,6 +12,7 @@
 ## Product
 
 * [The weekly cycle](product/weekly-cycle.md)
+* [Buying calls](product/buying-calls.md)
 * [Fees](product/fees.md)
 * [Assignment](product/assignment.md)
 * [Risks](product/risks.md)
