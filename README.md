@@ -38,6 +38,8 @@ These docs contain no performance figures. Worked examples marked as coming from
 | `stonkhouse.fun` | The public site. It explains the product and never asks for a wallet. It carries the Terms of Use (`/terms`), the privacy notice (`/privacy`), the perimeter disclosure and vulnerability reporting (`/legal`), and `/.well-known/security.txt`. |
 | `app.stonkhouse.fun` | The app. `/` is the product home and does not ask for a wallet. Deposit and write on `/account`. Buy lots on `/book`. |
 | `docs.stonkhouse.fun` | These docs: depositor and buyer documentation and the protocol reference. |
+| [x.com/stonkhousefun](https://x.com/stonkhousefun) | X. |
+| [github.com/stonkhousedotfun](https://github.com/stonkhousedotfun) | Source. |
 
 Security reports go to **security@stonkhouse.fun**. See [Security and audits](protocol/security.md#reporting-a-vulnerability). `callhouse.xyz` is not a Stonkhouse domain.
 
