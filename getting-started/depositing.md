@@ -1,13 +1,13 @@
 # Depositing
 
-A deposit sends NVDA Stock Tokens into the vault and mints cNVDA shares to you. Deposits are open while the vault is Idle, and while a week is listed until its exercise timestamp, unless one of the conditions under [What can block a deposit](#what-can-block-a-deposit) closes them.
+A deposit sends NVDA Stock Tokens into **your isolated account**. They sit idle until you request lots. Idle NVDA can be withdrawn. Only lots you request can be listed, filled, or assigned.
 
 {% hint style="warning" %}
 **Before you deposit:** Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities, issued by Robinhood Assets (Jersey) Limited. Stonkhouse is not available to US persons. The contracts have had no external audit, and the vault's admin is a single hot wallet with no timelock. Read [Risks](../product/risks.md) first.
 {% endhint %}
 
 {% hint style="info" %}
-The NVDA vault is live at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`. Total deposits are capped at 20 NVDA (`depositCap`), and the admin can change the cap at any time. Every address is on [Contracts and addresses](../protocol/addresses.md).
+The factory is live at `0x7850Ae4ac03b651263cE78EC5FcED11b0d0e05A7`. Each account is capped at 20 NVDA. Every address is on [Contracts and addresses](../protocol/addresses.md).
 {% endhint %}
 
 ## What you need
@@ -20,10 +20,10 @@ The NVDA vault is live at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`. Total de
 
 ## Step by step
 
-1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect MetaMask or Phantom. Switch to Robinhood Chain (4663) if asked.
-2. Enter the amount of NVDA to deposit. The Deposit card shows how much room is left under the deposit cap ("cap headroom") and how many cNVDA the amount buys at the current share price ("You receive"). It does not quote a return. While a week is armed, it shows the risk described below. When the vault would refuse a deposit, the card says deposits are closed and why.
-3. **Approve.** The vault needs permission to move your NVDA. The app asks for an approval of exactly the amount you are depositing, not an unlimited one.
-4. **Deposit.** Confirm the deposit transaction. The vault pulls your NVDA and mints cNVDA to you in the same transaction.
+1. Open `app.stonkhouse.fun/account` and connect MetaMask or Phantom. Switch to Robinhood Chain (4663) if asked.
+2. Create your account if you do not have one.
+3. Enter the amount of NVDA to deposit. Approve exactly that amount, then deposit.
+4. Request how many 1-NVDA lots to write this week. The keeper lists one full Seaport order per lot.
 
 ## What you receive
 

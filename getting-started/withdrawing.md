@@ -25,7 +25,7 @@ The Withdraw card shows "instant path open" or "queue only" based on the vault's
 
 ### Step by step
 
-1. Open the NVDA vault at `app.stonkhouse.fun/vault/nvda` and connect MetaMask or Phantom.
+1. Open `app.stonkhouse.fun/account` and connect MetaMask or Phantom. Idle NVDA withdraws from your account. (A queued redemption on the retired pooled vault collects on `/collect`.)
 2. Enter the number of cNVDA shares to redeem. The app shows "Redeem now" when the instant path is open.
 3. Confirm. Your shares burn and NVDA is sent to you in the same transaction.
 

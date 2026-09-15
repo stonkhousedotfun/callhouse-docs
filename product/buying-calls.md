@@ -20,7 +20,7 @@ The vault is live on Robinhood Chain at `0x88a98931E3682137E7e4D3426f623247f4A4e
 | **Price** | One USDG price per contract for the whole listing, never above the strike |
 | **Seller** | The vault. Each contract is collateralised by one NVDA that the vault locks in the clearinghouse inside your fill. |
 
-The terms of an option type cannot change once it exists. The cycle page reads them back from the clearinghouse and warns if they differ from what the vault recorded when it armed the week.
+The terms of an option type cannot change once it exists. The book reads them back from the clearinghouse and warns if they differ from what the vault recorded when it armed the week.
 
 ### How the keeper sets the strike and the price
 
@@ -30,16 +30,16 @@ The keeper prices each week from Cboe's free, delayed NVDA option quotes. This i
 * **Ask per contract:** the higher of the vault's premium floor plus 0.5% (`KEEPER_PREMIUM_MARGIN_BPS` is 50 in production) and the quotes' mid price at that strike plus 10%, rounded up to a USDG base unit and never above the strike.
 * **No data, no week:** if the quotes are missing, stale or inconsistent, the keeper arms nothing that week. It never falls back to another price.
 
-The cycle page shows the inputs the keeper reports for the live listing. They come from the keeper, not the chain, so the page cannot check them.
+The book shows the inputs the keeper reports for the live listing. They come from the keeper, not the chain, so the page cannot check them.
 
 Cycle 1, which exercises on 18 September 2026, is an exception. Its live listing, 1 contract at 0.856436 USDG with a 223 USDG strike, was priced by the keeper version before `vol` mode, from the premium floor then in force (0.40% of spot) plus the keeper's margin. It is the second of that cycle's three listings.
 
 ## Where to buy
 
-The vault's order is published in one place: the app's cycle page, `app.stonkhouse.fun/vault/nvda/cycle`. It is not posted to any marketplace or order-book service, there is no third-party fee, and there is nothing to sign: the vault validated the order on Seaport by hash, and Seaport skips the signature check for a validated order.
+The vault's order is published in one place: the app's book, `app.stonkhouse.fun/book`. It is not posted to any marketplace or order-book service, there is no third-party fee, and there is nothing to sign: the vault validated the order on Seaport by hash, and Seaport skips the signature check for a validated order.
 
-1. **On the cycle page.** It reads the week's option and the vault's authorised order from the chain, gets the order's full parameters from the keeper, and checks them against the chain: the order must hash to the vault's authorised order, name the vault as offerer and zone, and pay USDG to the vault and nobody else. It then simulates your exact fill from your address. The button stays off while the simulation shows the vault or Seaport refusing the fill, or USDG refusing to move. It stays on when only your side is short, such as a missing USDG approval, which the button sends first, and when the result is inconclusive, which the page flags with a warning.
-2. **With your own Seaport 1.6 client.** The fill card on the cycle page shows the raw order and lets you copy it. With it, call `fulfillAdvancedOrder` on Seaport 1.6 with numerator k (the contracts you want) and denominator N (the order's size), an empty signature, empty extra data, no criteria resolvers, a zero conduit key, and your receiving address, after approving k × the unit price of USDG to Seaport. The Seaport address is on [Contracts and addresses](../protocol/addresses.md).
+1. **On the book.** It reads the week's option and the vault's authorised order from the chain, gets the order's full parameters from the keeper, and checks them against the chain: the order must hash to the vault's authorised order, name the vault as offerer and zone, and pay USDG to the vault and nobody else. It then simulates your exact fill from your address. The button stays off while the simulation shows the vault or Seaport refusing the fill, or USDG refusing to move. It stays on when only your side is short, such as a missing USDG approval, which the button sends first, and when the result is inconclusive, which the page flags with a warning.
+2. **With your own Seaport 1.6 client.** The fill card on the book shows the raw order and lets you copy it. With it, call `fulfillAdvancedOrder` on Seaport 1.6 with numerator k (the contracts you want) and denominator N (the order's size), an empty signature, empty extra data, no criteria resolvers, a zero conduit key, and your receiving address, after approving k × the unit price of USDG to Seaport. The Seaport address is on [Contracts and addresses](../protocol/addresses.md).
 
 ## The order
 
@@ -80,7 +80,7 @@ Measured in fork rehearsals of the keeper, in gas units. What that costs in ETH 
 | USDG approval to the clearinghouse, before exercising | 57,988 (an earlier rehearsal, 13 September 2026) |
 | Exercise | 156,019 (9 contracts, the same earlier rehearsal) |
 
-The cycle page simulates the fill with a gas limit of 800,000 before it lets you send it.
+The book simulates the fill with a gas limit of 800,000 before it lets you send it.
 
 ## When a fill is refused
 
@@ -91,19 +91,19 @@ The vault prices every fill against the spot of the moment it happens, not the s
 
 The band's upper bound is not checked again at a fill: after spot falls, the strike is further out of the money, which makes the call safer to sell.
 
-Other reasons a fill can be refused: the sale window has closed (`WriteWindowClosed`), capacity has shrunk (`ContractsAboveUtilization`, `ContractsAboveCap`), writes are halted (`WritesAreHalted`), the Stock Token's oracle is paused (`OraclePaused`), the price feed is older than `maxPriceAge`, currently four days (`StalePrice`), Valorem's engine fee is on and not accepted (`ValoremFeeNotAccepted`), or the order has been cancelled, sold out or replaced. On your side: not enough USDG, a missing approval, USDG paused or your address frozen by USDG. The cycle page names the reason its simulation hit. See the [FAQ](../resources/faq.md#why-was-my-fill-refused).
+Other reasons a fill can be refused: the sale window has closed (`WriteWindowClosed`), capacity has shrunk (`ContractsAboveUtilization`, `ContractsAboveCap`), writes are halted (`WritesAreHalted`), the Stock Token's oracle is paused (`OraclePaused`), the price feed is older than `maxPriceAge`, currently four days (`StalePrice`), Valorem's engine fee is on and not accepted (`ValoremFeeNotAccepted`), or the order has been cancelled, sold out or replaced. On your side: not enough USDG, a missing approval, USDG paused or your address frozen by USDG. The book names the reason its simulation hit. See the [FAQ](../resources/faq.md#why-was-my-fill-refused).
 
 ## Exercising
 
-Exercise happens on the clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`. The vault takes no part in it. You can exercise from the cycle page or call the clearinghouse directly.
+Exercise happens on the clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`. The vault takes no part in it. You can exercise from the book or call the clearinghouse directly.
 
 ### The exercise window
 
 The clearinghouse's `exercise` accepts a call only while `exerciseTimestamp <= block.timestamp < expiryTimestamp`, reading both from the option type. Before the window it reverts with `ExerciseTooEarly`; from expiry on it reverts with `ExpiredOption`. For cycle 1 (strike 223 USDG) the window opens at 1789761600, Friday 18 September 2026, 8:00pm UTC (4:00pm ET), and closes at 1789848000, Saturday 19 September 2026, 8:00pm UTC (4:00pm ET). Nothing is exercised automatically: a call not exercised by expiry is worthless.
 
-### The Exercise card on the cycle page
+### The Exercise card on the book
 
-When the connected wallet holds this week's option (the clearinghouse ERC-1155 token whose id is `vault.optionId()`), the cycle page shows an **Exercise** card with:
+When the connected wallet holds this week's option (the clearinghouse ERC-1155 token whose id is `vault.optionId()`), the book shows an **Exercise** card with:
 
 * the wallet's option balance;
 * the strike;
