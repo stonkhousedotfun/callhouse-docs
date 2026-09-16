@@ -26,6 +26,10 @@
 * [Contracts and addresses](protocol/addresses.md)
 * [Security and audits](protocol/security.md)
 
+## Roadmap
+
+* [Roadmap](roadmap.md)
+
 ## Resources
 
 * [FAQ](resources/faq.md)
