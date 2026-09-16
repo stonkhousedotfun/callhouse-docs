@@ -32,7 +32,13 @@ Each user has an isolated account cloned from the factory. A fill writes **that*
 | Guardian | [`0x29741A8d283a253E8Ce10aDfd04C6507438b6F39`](https://robinhoodchain.blockscout.com/address/0x29741A8d283a253E8Ce10aDfd04C6507438b6F39) |
 | Fee recipient | [`0xEb82c3D0F89d47453F94f0C2b2a2752e27a19d9b`](https://robinhoodchain.blockscout.com/address/0xEb82c3D0F89d47453F94f0C2b2a2752e27a19d9b) |
 
-The keeper is not admin. App: `app.stonkhouse.fun/account` and `/book`.
+The keeper is not admin (`hasRole` on 2026-09-15). App: `app.stonkhouse.fun/account` and `/book`.
+
+Live factory settings, same date: `policy()` is `(300, 1200, 40, 9500, 500, 50)` — 3%–12% OTM, 0.40% min premium, 95% utilisation, 5% fee, 50 lots. `depositCap()` is `type(uint256).max`. `maxPriceAge()` is 4 days. Writes are not halted. Valorem's engine fee is not accepted.
+
+Week 1: strike 223 USDG, ask 1.000000 USDG, exercise Friday 18 September 2026 4:00pm ET, base expiry 24 hours later.
+
+The closed pooled vault (`cNVDA`) is `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`. It is not the live product. Collect leftover redemptions at `app.stonkhouse.fun/collect`.
 
 ## Check it yourself
 

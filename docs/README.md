@@ -4,7 +4,7 @@ Stonkhouse lets you put NVDA Stock Tokens to work on Robinhood Chain (chain id 4
 
 The first market is the **NVDA Stock Token**. Deposit at `app.stonkhouse.fun/account`. Buy at `app.stonkhouse.fun/book`. Factory: `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb`.
 
-There is no protocol token, no points programme and no airdrop. What depositors receive is the USDG a buyer actually paid, less the protocol fee, plus the strike USDG of any assignment. The vault is not upgradeable and has no function that migrates deposits, so a fix would need a new vault.
+There is no protocol token, no points programme and no airdrop. Premium is paid to your wallet on the fill, less 5%. Strike USDG from assignment sits in the account until you collect it. The account implementation is locked; a fix would need a new factory and new accounts.
 
 {% hint style="warning" %}
 **Read these before anything else.**
@@ -12,7 +12,7 @@ There is no protocol token, no points programme and no airdrop. What depositors 
 * **Premium is paid only if a buyer fills.** A week with no buyer pays zero premium. Because calls are written only when they are bought, a week with no buyer also writes nothing.
 * **Assignment can take the collateral at the strike.** Only lots you chose to write, and that actually sold, can be assigned. The upside above the strike is given up on those lots, and v1 does not buy the stock back.
 * **Idle NVDA is not written.** Lots you did not request cannot be assigned.
-* **Stock Tokens are debt securities.** They are issued by Robinhood Assets (Jersey) Limited. They are not Nvidia shares and carry no vote, and the issuer can pause transfers, blocklist addresses (the vault's included) and burn tokens from any address.
+* **Stock Tokens are debt securities.** They are issued by Robinhood Assets (Jersey) Limited. They are not Nvidia shares and carry no vote, and the issuer can pause transfers, blocklist addresses (your account included) and burn tokens from any address.
 * **Stonkhouse is not available to US persons.** This is a restriction in the Terms of Use, not a technical control.
 * You can lose the collateral you deposit.
 {% endhint %}
@@ -27,8 +27,9 @@ The factory is `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb` on chain 4663. Every
 
 * Stonkhouse's clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`, is not yet source-verified; its runtime bytecode equals Valorem's upstream code apart from the metadata hash.
 * The keeper's alerts are logged but not yet delivered to any channel.
+* The earlier pooled vault (`cNVDA`, `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`) is closed. Collect leftover redemptions at `app.stonkhouse.fun/collect`.
 
-These docs contain no performance figures. Worked examples marked as coming from a fork rehearsal were produced on a copy of the chain, not by a live week. The app's Activity page lists the vault's weeks, including weeks that sold nothing.
+These docs contain no performance figures. Live week 1 (set 2026-09-15): strike 223 USDG, ask 1.000000 USDG, exercise Friday 18 September 2026, 4:00pm ET.
 
 ## Official domains
 
@@ -59,8 +60,8 @@ The route in the team's own launch runbook: bridge a little ETH to chain 4663, s
 ## Where to go next
 
 * [How Stonkhouse works](getting-started/how-it-works.md): the week end to end, in six steps.
-* [Depositing](getting-started/depositing.md), [Withdrawing and the redeem queue](getting-started/withdrawing.md) and [Claiming USDG](getting-started/claiming-usdg.md): what each action does and what can block it.
-* [Buying calls](product/buying-calls.md): how a buyer fills the vault's order, and how to exercise.
+* [Depositing](getting-started/depositing.md), [Withdrawing](getting-started/withdrawing.md) and [Claiming USDG](getting-started/claiming-usdg.md): what each action does and what can block it.
+* [Buying calls](product/buying-calls.md): how a buyer fills a listed lot, and how to exercise.
 * [Fees](product/fees.md) and [Assignment](product/assignment.md): the two things that decide what a week leaves you with.
 * [Risks](product/risks.md): the full list. Read it before depositing.
 * [Launch policy and hard caps](product/policy.md): the limits compiled into the contracts.

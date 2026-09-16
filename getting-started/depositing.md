@@ -3,7 +3,7 @@
 A deposit sends NVDA Stock Tokens into **your isolated account**. They sit idle until you request lots. Idle NVDA can be withdrawn. Only lots you request can be listed, filled, or assigned.
 
 {% hint style="warning" %}
-**Before you deposit:** Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities, issued by Robinhood Assets (Jersey) Limited. Stonkhouse is not available to US persons. The contracts have had no external audit, and the vault's admin is a single hot wallet with no timelock. Read [Risks](../product/risks.md) first.
+**Before you deposit:** Premium is paid only if a buyer fills. Assignment can take the collateral at the strike. Stock Tokens are debt securities, issued by Robinhood Assets (Jersey) Limited. Stonkhouse is not available to US persons. The contracts have had no external audit, and factory admin is a single hot wallet with no timelock. Read [Risks](../product/risks.md) first.
 {% endhint %}
 
 {% hint style="info" %}
@@ -21,69 +21,33 @@ The factory is live at `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb`. Every addre
 ## Step by step
 
 1. Open `app.stonkhouse.fun/account` and connect MetaMask or Phantom. Switch to Robinhood Chain (4663) if asked.
-2. Create your account if you do not have one.
-3. Enter the amount of NVDA to deposit. Approve exactly that amount, then deposit.
-4. Set how much is for sale this week, then **List this week** (or wait for the keeper).
+2. Create your account if you do not have one. The factory clones one account per owner.
+3. Enter the amount of NVDA to deposit. Approve exactly that amount, then deposit. Only the account owner can deposit.
+4. Set how much is for sale this week (whole NVDA lots), then **List this week** (or wait for the keeper to list for you).
 
 Idle NVDA is still yours. Only the amount you list can be sold. See [Withdrawing](withdrawing.md) and [Claiming USDG](claiming-usdg.md).
 
-{% hint style="warning" %}
-**A deposit while a week is listed is priced at face value.** The share price counts the NVDA locked behind this week's calls at full value and does not subtract what the calls already sold could cost. If NVDA is already near or above the strike when you deposit, you pay full price for shares whose collateral may leave at the strike, and part of that loss is yours. Depositing while the vault is Idle avoids this.
-{% endhint %}
+## What the deposit does
 
-## When deposits are open
+`deposit` pulls NVDA from your wallet into your clone. There are no shares and no NAV. The tokens sit as idle balance until you `requestWrite` and the account `list`s.
 
-| Vault state | Deposits |
-|---|---|
-| Idle | Open, up to the cap |
-| Idle, with a stranded claim | Closed (`DepositsClosed`) |
-| Listed, before the exercise timestamp | Open, up to the cap |
-| Listed, at or after the exercise timestamp | Closed (`DepositsClosed`) |
-| Exercisable | Closed (`DepositsClosed`) |
-| Settling | Closed. This phase starts and ends inside a single `rollClose` transaction. |
-
-Deposits reopen when `rollClose` returns the vault to Idle, or, after a week whose claim was stranded, when `retryStrandedClaim` redeems the claim. The vault's `maxDeposit` goes to zero at the same moment a deposit would start to fail, and the app's "max" figure follows it.
+The factory's `depositCap` is checked against **that account's** held NVDA (idle plus anything locked in this week's Valorem claim). Live, the cap is `type(uint256).max`, so it does not bind. Admin can lower it at any time, including to zero.
 
 ## What can block a deposit
 
-Every closing condition reverts with the same error, `DepositsClosed`, which carries no argument. The app reads the vault's phase, the clock and its balances to say which one applies.
-
-| Cause | What you see | What to do |
+| Cause | Error | What to do |
 |---|---|---|
-| The vault is not Idle or Listed | `DepositsClosed` | Wait for `rollClose` to return the vault to Idle |
-| The week is listed and its exercise timestamp has passed | `DepositsClosed` | Same. This check does not depend on anyone calling `lockBook`. |
-| Contracts have been assigned and their strike USDG is still inside the Valorem claim | `DepositsClosed` | Same. This second check does not depend on the clock. |
-| A claim is stranded | `DepositsClosed` | Wait for `retryStrandedClaim` to redeem it |
-| The vault holds less NVDA than it has set aside for settled redemptions. In practice only an issuer burn of the vault's tokens causes this. | `DepositsClosed` | Wait until the settled redemptions are collected or returning collateral covers them |
-| The share price is below the share-price floor | `DepositsClosed` | See [The share-price floor](#the-share-price-floor) |
-| A fill of the vault's listing has already happened earlier in the same transaction | `DepositsClosed` | Deposit in a separate transaction. See [A deposit inside a fill is refused](#a-deposit-inside-a-fill-is-refused). |
-| The deposit would take the vault past its cap | `DepositCapExceeded` | Deposit less. The cap is currently 20 NVDA. The admin sets it with `setDepositCap`, which has no bound, so it can also close deposits by setting 0. |
-| The amount is zero | `ZeroAssets` | Enter an amount |
-| The amount is too small to mint a share | `ZeroShares` | Deposit more |
-| The Stock Token issuer has paused transfers, or blocklisted you or the vault | The token transfer reverts | Nothing can be done from the vault. Wait for the restriction to lift. |
+| You are not the account owner | `NotOwner` | Deposit from the wallet that created the account |
+| Amount is zero | `ZeroAmount` | Enter an amount |
+| The deposit would take **this account** past `depositCap` | `DepositCapExceeded` | Deposit less, or wait for admin to raise the cap |
+| The Stock Token issuer has paused transfers, or blocklisted you or the account | The token transfer reverts | Nothing can be done from the account. Wait for the restriction to lift |
 
-The cap is measured against the NVDA the vault is responsible for: idle NVDA, plus NVDA locked in this week's calls, minus NVDA already set aside for settled redemptions. A fill does not free up room under it.
+A halt on writes does **not** block deposits. A stale or paused price feed does not either. Those stop listing and fills, not deposits.
 
-A halt on writes does **not** block deposits, and neither does a stale or paused price feed. Those stop the vault from arming weeks, authorising listings and accepting fills, not from accepting NVDA.
-
-### The share-price floor
-
-The vault sells no new shares while one cNVDA is worth less than one millionth of an NVDA: in the contract's terms, while `totalSupply > totalAssets × 1,000,000`, both counted in base units. A vault reads like that only after losing almost all of its NVDA with its shares still outstanding, for example every contract it sold assigned plus an issuer burn, or a burn of its whole idle balance. Without the floor a newcomer could buy nearly all of what is left in the vault, and anything that later came back to it, for dust. The floor is compiled into the contract. Deposits reopen by themselves once the share price is back above it, for example when collateral returns or a stranded claim is redeemed, with no governance action. A new vault with no shares is not below it.
-
-### After an issuer burn
-
-The Stock Token has an issuer burn (`adminBurn`) that takes tokens from any address, the vault's included. The vault does not overstate its value when that happens: NVDA set aside for settled redemptions comes off the whole balance, and the share price reads the loss. If the burn leaves the vault holding less NVDA than it has set aside, deposits close until that is covered again, so no new deposit is paid out to earlier redeemers, and settled redemptions are paid pro rata. See [Withdrawing and the redeem queue](withdrawing.md#after-an-issuer-burn-the-reserve-haircut).
-
-## A deposit inside a fill is refused
-
-A deposit in the same transaction as a fill of the vault's listing, made after that fill has written its calls, is refused with `DepositsClosed`. Seaport hands the option tokens to a buyer before it collects the buyer's USDG, and a buyer that is a contract gets control in between. A deposit made at that moment would mint shares before the fill's premium reached the vault, and those shares would take a slice of the premium the fill was paying. So once any fill has written in a transaction, every later deposit in that transaction is refused, even after the USDG has arrived. The next transaction is unaffected. An ordinary deposit from a wallet never meets this.
-
-## Why deposits close at the exercise timestamp
-
-Assignment happens inside Valorem with no callback to the vault. When a buyer exercises, NVDA leaves the vault's claim at once, but the offsetting strike USDG only arrives at `rollClose`. If deposits stayed open through the exercise window, someone could exercise, mint shares against the lowered share price in the same block, and take part of the strike proceeds from the depositors who were actually assigned. Closing deposits on the timestamp removes that window whether or not anyone calls `lockBook` and whether or not the keeper is running. Fills close at the same moment, so nothing can be sold and exercised in the same block either. [Security and audits](../protocol/security.md) has the full finding.
+You can deposit while a week is listed. New NVDA stays idle: it is not added to this week's reserved lots. To offer more you settle the open week first, then request and list again.
 
 ## Related
 
-* [Withdrawing and the redeem queue](withdrawing.md)
+* [Withdrawing](withdrawing.md)
 * [The weekly cycle](../product/weekly-cycle.md)
 * [Launch policy and hard caps](../product/policy.md)
