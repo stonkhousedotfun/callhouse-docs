@@ -1,14 +1,5 @@
 # Roadmap
 
-Building the leading options and yield platform for tokenized stocks.
-
-{% hint style="info" %}
-This page describes **what we are building**, not what is live today. Nothing on this page is a
-commitment to a date, and items may change or be dropped. For what is actually deployed right now,
-see [Contracts and addresses](protocol/addresses.md) and
-[Security and audits](protocol/security.md).
-{% endhint %}
-
 <figure><img src=".gitbook/assets/stonkhouse-roadmap.png" alt="StonkHouse roadmap: Trust &#x26; Safety, A Real Market, Buyer-First App, Revenue Model, Growth Loops and Token Flywheel"><figcaption><p>The StonkHouse roadmap at a glance</p></figcaption></figure>
 
 ## Trust & Safety
@@ -69,8 +60,3 @@ Platform revenue buys back, burns and rewards stakers. A token that's necessary,
 * **Real yield** — Staking pays from actual earnings, not emissions. Burns scale with real usage.
 * **Real perks** — Stakers get lower fees, better rates and a vote on fees, listings and events.
 * **Emission discipline** — New tokens only against volume milestones, never on a timer.
-
-{% hint style="warning" %}
-No protocol token exists today, and none has been issued. There is no points programme and no
-airdrop. This section describes a design under consideration, not a live or committed token.
-{% endhint %}
