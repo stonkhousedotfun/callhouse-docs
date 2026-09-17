@@ -42,8 +42,6 @@ Small, layered fees that scale with volume and stay invisible on a single trade.
 * **Lending spread · ~10% of yield** — The platform's cut of interest on idle deposited stock.
 * **Hard caps** — Every fee is bounded by the immutable core.
 
-Today only the 5% premium fee is charged. See [Fees](product/fees.md) for what is live.
-
 ## Growth Loops
 
 Make wins shareable, events tradeable, and yield passive.
