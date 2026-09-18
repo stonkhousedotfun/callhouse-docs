@@ -3,20 +3,20 @@
 Stonkhouse is building a market for Stock Token options on Robinhood Chain (chain id `4663`). In v2, you can compare the full cost and possible payout of a call or put, buy from an order book in 0.01-share steps, sell a long before expiry, or deposit collateral and set your own ask. A shared Clearinghouse prices each series at expiry and pays holders through permissionless redemption.
 
 {% hint style="warning" %}
-**Read the risks before trading.** Most options expire worthless. A buyer can lose the full purchase cost, including the taker fee. A writer can lose collateral value and gives up upside above a covered call's strike on filled units. Stock Tokens are debt securities issued by Robinhood Assets (Jersey) Limited, not company shares. Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stonkhouse is not available to US persons. See [Risks](resources/risks.md).
+**Read the risks before trading.** Most options expire worthless. A buyer can lose the full purchase cost, including the taker fee. A writer can lose collateral value and gives up upside above a covered call's strike on filled units. Stock Tokens are debt securities issued by Robinhood Assets (Jersey) Limited, not company shares. Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stonkhouse is not available to US persons. See [Risks](resources/risks.md).
 {% endhint %}
 
 ## Release status
 
-| Product | Status in this documentation draft | Rules |
+| Product | Current status | Rules |
 |---|---|---|
-| V2 shared market | A separate chain-4663 dev deployment and preview were recorded on 18 September 2026; public production addresses are not published here | This guide's Getting started, Buying, Writing, Market, and Protocol sections describe the proposed production release |
-| V1 NVDA solo accounts | Existing product on Robinhood Chain as verified on 16 September 2026; winding down when v2 launches | [Moving from v1](legacy/moving-from-v1.md) and [v1 reference](legacy/v1-reference.md) |
+| V2 shared market | The chain-4663 set first deployed for the 18 September 2026 dev launch is the live public contract set; NVDA is the only registered market | These guides describe interface v7. Check the current app, on-chain status, [Markets](product/markets.md), and [Addresses](protocol/addresses.md) before trading; the initial launch did not include every keeper or market-making service. |
+| V1 NVDA solo accounts | Separate legacy product on Robinhood Chain; no automatic migration to v2 | [Moving from v1](legacy/moving-from-v1.md) and [v1 reference](legacy/v1-reference.md) |
 | Earlier pooled vault | Closed | Legacy collection only; no new deposits or writing |
 
 V1 positions do not move into v2 automatically. Do not use a v1 factory address for a v2 trade. Check the current app and [Addresses](protocol/addresses.md) before signing. Where these pages and the code disagree, **the code is the specification**.
 
-The v2 guides describe interface v7 behaviour, not a production trading offer or a live quote. Contract source, generated ABIs, app and indexer consumers, approved per-market rates, replay and end-to-end acceptance must agree on the final reviewed revision before publication. The dev deployment does not fill the production [address table](protocol/addresses.md). The historical v1 fee and lifecycle rules remain in the Legacy section.
+The v2 guides describe interface v7 behaviour, not a live quote. The owner has designated the dev-origin chain-4663 deployment as the public contract set; that change in designation does not itself deploy bots, fund bounties, add markets, or make an old order tradable. The historical v1 fee and lifecycle rules remain in the Legacy section.
 
 ## Start here
 
@@ -29,12 +29,12 @@ The v2 guides describe interface v7 behaviour, not a production trading offer or
 
 | Where | Purpose |
 |---|---|
-| [app.stonkhouse.fun](https://app.stonkhouse.fun/) | Connect a wallet, view the v2 market when launched, and access `/legacy` for v1 positions. |
+| [app.stonkhouse.fun](https://app.stonkhouse.fun/) | Connect a wallet, check current v2 market availability, and access `/legacy` for v1 positions. |
 | [stonkhouse.fun](https://stonkhouse.fun/) | Product information, terms, privacy notice, and reporting links. |
 | [docs.stonkhouse.fun](https://docs.stonkhouse.fun/) | These guides and the protocol reference. |
 | Robinhood Chain 4663 | Contracts and transactions. You need ETH on this chain for gas. |
 
-USDG pays option premiums and secures puts. Covered calls require the relevant Stock Token. Neither Stonkhouse nor these docs supply a bridge, a wallet, or an issuer account. Market availability and addresses belong on the generated [Markets](product/markets.md) page and the final [Addresses](protocol/addresses.md) page; a planned market is not yet tradable.
+USDG pays option premiums and secures puts. Covered calls require the relevant Stock Token. Neither Stonkhouse nor these docs supply a bridge, a wallet, or an issuer account. Market availability and addresses belong on the generated [Markets](product/markets.md) page and [Addresses](protocol/addresses.md); a planned market is not yet tradable.
 
 ## No affiliation
 

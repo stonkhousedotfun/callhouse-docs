@@ -3,14 +3,14 @@
 Choose an ask for a covered call or, where the market enables puts, a cash-secured put. Use fair value as a guide while keeping control over your price.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 ## Choose the terms
 
 On `/earn/[ticker]`, choose a valid expiry and strike, your size in 0.01-share steps, and the premium you ask per whole share. The expiry grid includes daily and weekly series. A new series is created only with a valid market strike tick and at least one hour before expiry; writing ends **30 minutes before expiry**. A write-on-fill ask expires no later than that cutoff.
 
-The app shows a fair-value estimate beside your ask. It is a **guideline, never a floor**: you can ask above or below it, and the estimate can be missing or stale. In the proposed v7 design, the ticket should show gross premium, any maker rebate, the effective primary premium fee and the rent charged **in the collateral asset** if the ask mints. The planned launch primary premium fee is 0%, but final live rates must be checked before a trade. The premium arrives only on a fill; an unfilled write-on-fill ask pays no rent. Rent can cost more than the premium from a cheap ask; compare their value before accepting a quote. If you mint directly before listing the long, you pay rent at mint even if no buyer ever fills your later ask. A higher ask can wait or never fill.
+The app shows a fair-value estimate beside your ask. It is a **guideline, never a floor**: you can ask above or below it, and the estimate can be missing or stale. In the deployed v7 design, the ticket should show gross premium, any maker rebate, the effective primary premium fee and the rent charged **in the collateral asset** if the ask mints. The planned launch primary premium fee is 0%, but final live rates must be checked before a trade. The premium arrives only on a fill; an unfilled write-on-fill ask pays no rent. Rent can cost more than the premium from a cheap ask; compare their value before accepting a quote. If you mint directly before listing the long, you pay rent at mint even if no buyer ever fills your later ask. A higher ask can wait or never fill.
 
 On first use, approve the OrderBook as a Clearinghouse operator with `setOperator(OrderBook, true)`. This permits the book to mint a long for a buyer from your free collateral when your `AskWrite` fills, including the mint's rent. Operator approval is a real power: the book can mint using your free collateral but cannot withdraw your balance to its own address. Review the contract address before approving.
 

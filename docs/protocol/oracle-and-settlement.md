@@ -3,7 +3,7 @@
 The oracle selects one price for every series of an underlying at an expiry. You can see whether that price is final, waiting through a delay, or held by a guardian veto.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 Where the prose and the code disagree, the code is the specification. The settlement design uses a fixed final 30-minute price window, pins an expiry's sources when its first series is created, and delays a result that lacks agreement between sources. The implementation is in `callhouse-contracts/src/v2/oracle/SettlementOracle.sol`.

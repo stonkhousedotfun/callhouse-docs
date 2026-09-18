@@ -3,7 +3,7 @@
 Understand maker quotes, rebates, scorekeeping, and the protocol-owned maker vault.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 ## Rebates and public scores
@@ -18,9 +18,9 @@ The operator may fund a separate USDG reward for an epoch. After it publishes an
 
 The treasury can fund `MakerVault` to place orders through a limited `QUOTER` role. The vault caps units per series and total notional, and bounds quotes against spot. The quoting key may move funds between the vault and its Clearinghouse ledger, place or replace orders, take within limits, and close pairs; it cannot withdraw treasury funds to itself.
 
-The proposed v7 vault adds an admin-set **net USDG outflow cap** to quoter-initiated bids, replacements and takes. Spending uses a budget that refills over 24 hours; cancelling a bid can restore budget. This is not a simple midnight reset or a cap on all possible trading losses. A full budget can be spent at once and refill during the next day, so net quoter outflow over 24 hours can reach about twice the stated cap. The cap does not bound the option value the vault sells, settlement losses, or issuer failures. Treasury admin actions are exempt, making separation of the admin and quoting keys important. The vault may still lose money through trading, stale quotes, or issuer and oracle failures. Its presence does not promise a buyer liquidity at every strike or time.
+The deployed v7 vault adds an admin-set **net USDG outflow cap** to quoter-initiated bids, replacements and takes. Spending uses a budget that refills over 24 hours; cancelling a bid can restore budget. This is not a simple midnight reset or a cap on all possible trading losses. A full budget can be spent at once and refill during the next day, so net quoter outflow over 24 hours can reach about twice the stated cap. The cap does not bound the option value the vault sells, settlement losses, or issuer failures. Treasury admin actions are exempt, making separation of the admin and quoting keys important. The vault may still lose money through trading, stale quotes, or issuer and oracle failures. Its presence does not promise a buyer liquidity at every strike or time.
 
-When the vault writes an option, it also needs enough free Stock Tokens or USDG for the proposed rent **in that collateral asset**. Rent is not part of the vault's USDG outflow measure when held in the Clearinghouse ledger; an exhausted budget can reduce bids even while asks remain available.
+When the vault writes an option, it also needs enough free Stock Tokens or USDG for the mint rent **in that collateral asset**. Rent is not part of the vault's USDG outflow measure when held in the Clearinghouse ledger; an exhausted budget can reduce bids even while asks remain available.
 
 ## Related
 

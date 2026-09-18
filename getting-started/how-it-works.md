@@ -3,7 +3,7 @@
 Follow a contract from a writer’s collateral and ask through a buyer’s purchase, expiry, settlement, and payout.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 ## One series, many participants
@@ -16,7 +16,7 @@ Writer deposits collateral → writer posts an ask → buyer fills the ask
          → settlement allocates the collateral → holders are paid
 ```
 
-**Before a fill.** An ask to write a new call does not mint an option. The writer sets its price and size. A fill locks collateral for the amount bought and, under the proposed v7 design, charges time-based rent from the writer's free Stock Token balance. An unfilled ask earns no premium, pays no rent and creates no short position.
+**Before a fill.** An ask to write a new call does not mint an option. The writer sets its price and size. A fill locks collateral for the amount bought and, under the deployed v7 design, charges time-based rent from the writer's free Stock Token balance. An unfilled ask earns no premium, pays no rent and creates no short position.
 
 **After a fill.** The buyer can hold the long, sell it before expiry, or buy more. The writer can keep the short or close it by acquiring an equal long. The public order book also contains bids and resale asks for existing longs.
 

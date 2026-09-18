@@ -3,14 +3,14 @@
 Read the v2 review status and the risks the contracts cannot remove before depositing or buying a contract.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 {% hint style="danger" %}
-The dev deployment has one hot admin key without a timelock. This design can change future series terms and rent rates, set a stuck settlement price under contract rules, and act outside the maker-vault outflow cap. Verify production role holders before funding a position.
+The live v2 deployment retains the original dev-launch hot admin key without a timelock. It can change future series terms and rent rates, set a stuck settlement price under contract rules, and act outside the maker-vault outflow cap. Verify current role holders before funding a position.
 {% endhint %}
 
-Where the prose and the code disagree, the code is the specification. The review status below distinguishes a test deployment from a public production release.
+Where the prose and the code disagree, the code is the specification. The owner has designated the existing chain-4663 deployment as the live public contract set; this is a change in release status, not a new deployment or an external audit.
 
 ## Review status
 
@@ -19,12 +19,12 @@ Where the prose and the code disagree, the code is the specification. The review
 | External audit | None. The v2 contracts are unaudited. No report is available. |
 | Internal test gate | Foundry build, formatting, unit, regression, fuzz, invariant and chain-4663 fork tests. `V2DocsNumbersTest` asserts the numbers used in these docs. |
 | Integration | `LifecycleTest` exercises calls and puts from series creation through payout; stateful invariants exercise balances under pauses, issuer faults and oracle failures. |
-| Deployment | A separate chain-4663 dev test set exists; no public production v2 address record is established here. A local fork and the dev set do not establish a public production release. |
+| Deployment | The 13-contract chain-4663 set first deployed for the dev launch is the live public set, at [these addresses](addresses.md). The recorded post-deploy verifier passed 121 on-chain checks; a fresh read found code at all 13 and NVDA enabled and unpaused. The live bytecode matches frozen dev source `1b08755` outside immutables, but public contracts `main` differs for `UniV3TwapSource`. No explorer source verification is established here. |
 | Bug bounty | None announced. Reports go to the security contact below. |
 
 Tests demonstrate the cases they cover; they do not establish that the contracts or external dependencies are free of vulnerabilities. The earlier v1 vault's internal reviews do not audit v2.
 
-The interface v7 source includes collateral rent, stale auto-roll cancellation and a vault outflow cap. Their presence in code or a dev deployment does not establish audited security, final production configuration, consumer integration or public availability. These controls are **not live in a public production release**.
+The deployed interface v7 includes collateral rent, stale auto-roll cancellation and a vault outflow cap. Their presence does not establish audited security or complete consumer and keeper coverage. The first public contract set was not a fresh production redeployment: it is the existing dev-origin set, with its original roles and configuration. Confirm each current market and service separately before relying on it.
 
 ## Risks that remain
 

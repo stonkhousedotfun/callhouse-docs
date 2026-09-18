@@ -14,21 +14,19 @@ A market is one Stock Token listed on the shared v2 contracts. Every market uses
 **Trust only the production addresses on this page or on [Addresses](../protocol/addresses.md), and check them on chain yourself.** This page is generated from the operations registry; the end of the page says where and when each kind of address was checked. Do not treat an address omitted from the production registry as an official Stonkhouse address without owner publication and on-chain verification.
 {% endhint %}
 
-**No v2 market is marked live for the public production release in this registry.** Every market below is `planned` for that release; none of these entries authorizes public production trading. A separately labeled dev preview can use a different registry and does not change these production statuses. The v1 NVDA factory at the end of this page is still live.
-
 ## Status and waves
 
-* **`planned`**: not registered for the public production release according to this registry. It authorizes no public production series, orders, buying, writing or deposits; a separate dev preview has its own status.
-* **`live`**: registered for the public production release. Buying and writing require an open series, usable orders and active launch controls; this status alone does not mean an automated strike ladder is running.
+* **`planned`**: not registered according to this registry. It authorizes no series, orders, buying, writing or deposits.
+* **`live`**: registered on the live v2 contracts. Buying and writing require an open series, usable orders and active launch controls; this status alone does not mean an automated strike ladder is running.
 * **`paused`**: registered, but new risk is stopped: no new series and no new contracts written. Contracts already written still settle and pay out; closing, redeeming, withdrawing and cancelling orders cannot be paused.
 
-Public production markets go live in waves: the canary first, then wave 1, then wave 2. A wave starts only after the previous one has run cleanly, so the order is a plan, not a schedule.
+Markets go live in waves: the canary first, then wave 1, then wave 2. A wave starts only after the previous one has run cleanly, so the order is a plan, not a schedule.
 
-Do not buy, write or deposit through a public production flow that presents a market listed here as `planned` as live. A separately labeled dev preview may use a different registry; verify its addresses and risks independently.
+Do not buy, write or deposit through a flow that presents a market listed here as `planned` as live. Verify the contract addresses and market status on chain.
 
 | Wave | Live | Paused | Planned |
 |---|---|---|---|
-| Canary | — | — | NVDA |
+| Canary | NVDA | — | — |
 | Wave 1 | — | — | AAPL, AMD, AMZN, GOOGL, META, MSFT, QQQ, SPY, TSLA |
 | Wave 2 | — | — | ASML, BABA, CLSK, COIN, CRCL, CRWV, DELL, EWY, GME, INTC, IONQ, MSTR, MU, NBIS, ORCL, PLTR, RGTI, RKLB, SGOV, SLV, SNDK, SPCX, TSM, USAR, USO |
 
@@ -44,7 +42,7 @@ When two sources agree within 1.5%, the price is final at once. With one source,
 
 | Ticker | Status | Wave | Stock Token | Chainlink feed | Settlement sources |
 |---|---|---|---|---|---|
-| **NVDA** | `planned` | Canary | [`0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC`](https://robinhoodchain.blockscout.com/address/0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC) | [`0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15`](https://robinhoodchain.blockscout.com/address/0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15) (`RHNVDA / USD`) | Chainlink + Uniswap v3 TWAP [`0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3`](https://robinhoodchain.blockscout.com/address/0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3) |
+| **NVDA** | `live` since [2026-09-18](https://robinhoodchain.blockscout.com/tx/0x193b514124fc9fb83d419e2e981c0e5369ce2a19e44671cbb69bee6f2807a6ea) | Canary | [`0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC`](https://robinhoodchain.blockscout.com/address/0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC) | [`0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15`](https://robinhoodchain.blockscout.com/address/0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15) (`RHNVDA / USD`) | Chainlink + Uniswap v3 TWAP [`0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3`](https://robinhoodchain.blockscout.com/address/0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3) |
 | **AAPL** | `planned` | Wave 1 | [`0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9`](https://robinhoodchain.blockscout.com/address/0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9) | [`0x6B22A786bAa607d76728168703a39Ea9C99f2cD0`](https://robinhoodchain.blockscout.com/address/0x6B22A786bAa607d76728168703a39Ea9C99f2cD0) (`Robinhood AAPL / USD`) | Chainlink |
 | **AMD** | `planned` | Wave 1 | [`0x86923f96303D656E4aa86D9d42D1e57ad2023fdC`](https://robinhoodchain.blockscout.com/address/0x86923f96303D656E4aa86D9d42D1e57ad2023fdC) | [`0x943A29E7ae51A4798823ca9eEd2ed533B2A22C72`](https://robinhoodchain.blockscout.com/address/0x943A29E7ae51A4798823ca9eEd2ed533B2A22C72) (`RHAMD / USD`) | Chainlink |
 | **AMZN** | `planned` | Wave 1 | [`0x12f190a9F9d7D37a250758b26824B97CE941bF54`](https://robinhoodchain.blockscout.com/address/0x12f190a9F9d7D37a250758b26824B97CE941bF54) | [`0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C`](https://robinhoodchain.blockscout.com/address/0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C) (`Robinhood AMZN / USD`) | Chainlink |
@@ -133,23 +131,23 @@ The registry's default ladder, which a market uses unless its row says "market s
 
 ## v2 contracts
 
-Every market uses the same v2 contracts. **This registry records no v2 contract deployment.** Addresses are added after owner publication and verification; do not infer chain-wide deployment status from an empty registry. [Addresses](../protocol/addresses.md) has the roles and how to check each contract.
+Every market uses the same v2 contracts. They were deployed from block **65,780,341**. [Addresses](../protocol/addresses.md) has the roles and how to check each contract.
 
 | Contract | What it does | Address |
 |---|---|---|
-| `Clearinghouse` | Markets, series, collateral, settlement and redemption | not recorded in this registry |
-| `OrderBook` | Bids, resale asks and write-on-fill asks | not recorded in this registry |
-| `SettlementOracle` | The settlement price of each market and expiry | not recorded in this registry |
-| `ExpiryCalendar` | Which timestamps are valid daily and weekly expiries | not recorded in this registry |
-| `KeeperRewards` | Small USDG bounties for permissionless lifecycle calls | not recorded in this registry |
-| `AutoRoller` | Writers' auto-roll strategies | not recorded in this registry |
-| `PayoutAdapter` | Converts payouts to USDG through Uniswap v3 | not recorded in this registry |
-| `MakerVault` | The protocol's market-making vault | not recorded in this registry |
-| `MakerRegistry` | Market maker rebate tiers | not recorded in this registry |
-| `RewardsDistributor` | Market maker reward claims per epoch | not recorded in this registry |
-| `ChainlinkFeedSource` | Settlement source: Chainlink push feeds | not recorded in this registry |
-| `UniV3TwapSource` | Settlement source: Uniswap v3 pool TWAPs | not recorded in this registry |
-| `DataStreamsSource` | Settlement source: Chainlink Data Streams (enabled for no market) | not recorded in this registry |
+| `Clearinghouse` | Markets, series, collateral, settlement and redemption | [`0x22dEf851cD1a3B04Ad7d232bE786d76E6944d424`](https://robinhoodchain.blockscout.com/address/0x22dEf851cD1a3B04Ad7d232bE786d76E6944d424) |
+| `OrderBook` | Bids, resale asks and write-on-fill asks | [`0x9fcAe743C3fA0aEC7DB9b1d01e86464b85759942`](https://robinhoodchain.blockscout.com/address/0x9fcAe743C3fA0aEC7DB9b1d01e86464b85759942) |
+| `SettlementOracle` | The settlement price of each market and expiry | [`0xb205984b5F2F9010c2bD8aCA46d946Fe1c4F2A54`](https://robinhoodchain.blockscout.com/address/0xb205984b5F2F9010c2bD8aCA46d946Fe1c4F2A54) |
+| `ExpiryCalendar` | Which timestamps are valid daily and weekly expiries | [`0xd0fCeD9Ee6F533aA900BEe8d0523eF4867a5784a`](https://robinhoodchain.blockscout.com/address/0xd0fCeD9Ee6F533aA900BEe8d0523eF4867a5784a) |
+| `KeeperRewards` | Small USDG bounties for permissionless lifecycle calls | [`0xFB409E6E253bcC12a65ED02B9D5aa3cAbF8f63f3`](https://robinhoodchain.blockscout.com/address/0xFB409E6E253bcC12a65ED02B9D5aa3cAbF8f63f3) |
+| `AutoRoller` | Writers' auto-roll strategies | [`0xca76e9d57992904a14E31C5103454A4906ebFfee`](https://robinhoodchain.blockscout.com/address/0xca76e9d57992904a14E31C5103454A4906ebFfee) |
+| `PayoutAdapter` | Converts payouts to USDG through Uniswap v3 | [`0xf529CE3708bd2002D6bC974dFC0501c92aE72c30`](https://robinhoodchain.blockscout.com/address/0xf529CE3708bd2002D6bC974dFC0501c92aE72c30) |
+| `MakerVault` | The protocol's market-making vault | [`0x5EA899580B3dEB99c6866c7CD14dEDc913C8C1d0`](https://robinhoodchain.blockscout.com/address/0x5EA899580B3dEB99c6866c7CD14dEDc913C8C1d0) |
+| `MakerRegistry` | Market maker rebate tiers | [`0xED816A81F8e311F78496c63c66abaA93A996cD3B`](https://robinhoodchain.blockscout.com/address/0xED816A81F8e311F78496c63c66abaA93A996cD3B) |
+| `RewardsDistributor` | Market maker reward claims per epoch | [`0xc2Eea33F12e26662c66D632915fD75BCEA13BF4f`](https://robinhoodchain.blockscout.com/address/0xc2Eea33F12e26662c66D632915fD75BCEA13BF4f) |
+| `ChainlinkFeedSource` | Settlement source: Chainlink push feeds | [`0x1a595B2F836b7B76e71C0F85ADA6186ef16fB96A`](https://robinhoodchain.blockscout.com/address/0x1a595B2F836b7B76e71C0F85ADA6186ef16fB96A) |
+| `UniV3TwapSource` | Settlement source: Uniswap v3 pool TWAPs | [`0x030f05E856c79bC215c5683DC201473e4F88a155`](https://robinhoodchain.blockscout.com/address/0x030f05E856c79bC215c5683DC201473e4F88a155) |
+| `DataStreamsSource` | Settlement source: Chainlink Data Streams (enabled for no market) | [`0xeC049Df6F9908374940065cec593Ac83fc1db4d2`](https://robinhoodchain.blockscout.com/address/0xeC049Df6F9908374940065cec593Ac83fc1db4d2) |
 
 v2 also relies on these third-party contracts. USDG's address is a constant of the registry, not a read: what the registry checks on chain at block 64,151,977 is that every configured Uniswap v3 pool holds exactly this token and the market's Stock Token. The Uniswap v3 contracts had code at block 65,069,842 (2026-09-17). Check USDG yourself: `cast call 0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168 "symbol()(string)"` on `https://rpc.mainnet.chain.robinhood.com` answers `USDG`, `decimals()(uint8)` answers 6.
 

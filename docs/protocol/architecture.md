@@ -3,7 +3,7 @@
 Follow a v2 contract from a shared series to a payout. The contracts hold your collateral and option tokens; the indexer, app and bots read or call them but hold no user funds.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 Where the prose and the code disagree, the code is the specification. Contract behaviour below follows the public `callhouse-contracts/src/v2/` source.
@@ -42,7 +42,7 @@ Let `E` be expiry at 16:00 New York on an NYSE session day. All times below are 
 
 | When | What happens |
 |---|---|
-| From 45 days to 1 hour before `E` | Anyone may create a valid series. Its oracle, exercise fee and proposed v7 rent rate are pinned; the first series for its underlying and expiry also pins the settlement sources and rules. A failed source pin prevents that first creation or adoption after Clearinghouse migration; later series on the same pinned expiry reuse the settlement pin. |
+| From 45 days to 1 hour before `E` | Anyone may create a valid series. Its oracle, exercise fee and deployed v7 rent rate are pinned; the first series for its underlying and expiry also pins the settlement sources and rules. A failed source pin prevents that first creation or adoption after Clearinghouse migration; later series on the same pinned expiry reuse the settlement pin. |
 | Until `E − 30 minutes` | You may deposit and mint a long and short pair, or post a write-on-fill ask. The book also trades existing longs. |
 | From `E − 30 minutes` to `E` | No new units may be minted. Bids and resale asks can still fill. |
 | At `E` | Book trading ends. A holder of both sides may still `close` until settlement. |
@@ -69,7 +69,7 @@ These examples of external controls were checked on chain 4663 on 17 September 2
 - **An in-the-money call can pay Stock Tokens.** USDG conversion is attempted by default. The protocol sets a base shortfall bound and adds the route's pool fee, subject to a total ceiling. A failed swap or a swap below that floor pays in kind; you can also choose in kind.
 - **A single-source price waits.** The default uncorroborated delay is six hours. It gives the guardian time to veto; no settlement occurs while the candidate is pending.
 - **The UTC close shifts.** 16:00 New York is 20:00 UTC in daylight saving time and 21:00 UTC in standard time. The series expires at the local session close.
-- **Premium is not in the Clearinghouse.** The book pays the seller and fee recipient during a fill. The Clearinghouse holds collateral and exercise fees; proposed v7 also holds mint rent until a pre-expiry close refunds part of it or settlement accrues the rest.
+- **Premium is not in the Clearinghouse.** The book pays the seller and fee recipient during a fill. The Clearinghouse holds collateral and exercise fees; deployed v7 also holds mint rent until a pre-expiry close refunds part of it or settlement accrues the rest.
 
 ## Related
 
