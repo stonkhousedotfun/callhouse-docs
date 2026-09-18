@@ -12,7 +12,7 @@ Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev 
 
 **Can I sell before expiry?** Yes. Hit a bid as a taker or list a resale ask as a maker while the series is open. A resale ask escrows the long tokens until it fills or you cancel it.
 
-**Do I have to exercise or pay the strike?** No strike payment is required in v2. Someone must submit the permissionless price-finalisation and series-settlement calls; once settled, you can redeem your own position. Do not assume a keeper will do this for you: no v2 cranker service was running at the recorded dev launch.
+**Do I have to exercise or pay the strike?** No strike payment is required in v2. Someone must submit the permissionless price-finalisation and series-settlement calls; once settled, you can redeem your own position. A production cranker came online on 18 September 2026 and created NVDA series, but automated settlement and redemption remain unproven; do not rely on it for the 18 September 20:00 UTC expiry without checking the on-chain result.
 
 **Why is a payout late?** The oracle can wait for a source, run a delayed single-source candidate, or hold a vetoed result. No caller may have submitted a permissionless lifecycle transaction yet. A failed outgoing transfer becomes a ledger credit. Check the series' settlement status and [Settlement and payout](../buying/settlement-and-payout.md).
 
