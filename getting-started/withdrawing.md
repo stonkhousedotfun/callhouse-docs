@@ -1,8 +1,18 @@
-# Withdrawing
+# Withdrawing (v1 archive)
 
-Idle NVDA in your account can be withdrawn at any time. NVDA listed for this week is locked until you settle after expiry.
+v1 writers withdrew free Stock Tokens from their solo account after old orders and claims were settled.
 
-1. Open `app.stonkhouse.fun/account` and connect MetaMask or Phantom.
-2. **Take out available** sends idle NVDA to your wallet.
+{% hint style="info" %}
+This is an archived v1 page. Its old product rules do not apply to a v2 trade. Existing v1 positions remain on their original contracts; see the [v1 reference](../legacy/v1-reference.md) and [Moving from v1](../legacy/moving-from-v1.md).
+{% endhint %}
 
-If some of your NVDA sold this week, settle after expiry first. Unsold lots come back; assigned lots pay strike USDG into the account.
+## For an existing v1 position
+
+Open the legacy account or book in the app, verify the original contract and your option’s dates on chain, and follow the [v1 run-off steps](../legacy/moving-from-v1.md). A v1 buyer may need to exercise manually during its window. A v1 writer must settle, collect any strike USDG, and withdraw before choosing to deposit separately into v2.
+
+## Related
+
+* [v1 reference](../legacy/v1-reference.md)
+* [Moving from v1](../legacy/moving-from-v1.md)
+* [V2 documentation home](../README.md)
+* [Risks](../resources/risks.md)

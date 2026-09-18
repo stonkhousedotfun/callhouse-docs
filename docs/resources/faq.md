@@ -1,69 +1,46 @@
 # FAQ
 
-### Is Stonkhouse live? Where is the factory?
+Find short answers about trading, writing, settlement, risks, and the current deployment state.
 
-Yes. Factory `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb` on Robinhood Chain. Deposit at `app.stonkhouse.fun/account`. Buy at `app.stonkhouse.fun/book`. Check every address on [Contracts and addresses](../protocol/addresses.md).
+{% hint style="warning" %}
+Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](risks.md) before using the product.
+{% endhint %}
 
-### Is it a pooled vault? What is cNVDA?
+## Trading
 
-No. The live product is one isolated account per user. There is no share token. `cNVDA` was the share of the **closed** pooled vault at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`. Collect leftover redemptions from that vault at `app.stonkhouse.fun/collect`.
+**What do I buy?** A fungible ERC-1155 long for a specific Stock Token, strike, type, and expiry. One unit covers 0.01 share. The premium plus taker fee is your maximum loss on the option; network gas is extra. See [Buying your first contract](../getting-started/buying-your-first-contract.md).
 
-### Is it audited?
+**Can I sell before expiry?** Yes. Hit a bid as a taker or list a resale ask as a maker while the series is open. A resale ask escrows the long tokens until it fills or you cancel it.
 
-No. No external audit firm has reviewed the contracts yet. An external audit is pending, with no report yet. Internal reviews of the earlier vault led to write-on-fill; they are not an audit of the live factory. See [Security and audits](../protocol/security.md).
+**Do I have to exercise or pay the strike?** No strike payment is required in v2. Someone must submit the permissionless price-finalisation and series-settlement calls; once settled, you can redeem your own position. Do not assume a keeper will do this for you: no v2 cranker service was running at the recorded dev launch.
 
-### What does a week pay?
+**Why is a payout late?** The oracle can wait for a source, run a delayed single-source candidate, or hold a vetoed result. No caller may have submitted a permissionless lifecycle transaction yet. A failed outgoing transfer becomes a ledger credit. Check the series' settlement status and [Settlement and payout](../buying/settlement-and-payout.md).
 
-Whatever a buyer paid for **your** listed NVDA, less 5%, and nothing if nobody bought. Premium lands in your wallet on the fill. Stonkhouse does not publish an APY or an APR.
+**Why did I get Stock Tokens rather than USDG?** A winning call is owed Stock Token value. The Clearinghouse tries to convert it by default. The protocol's conversion floor includes a base shortfall bound and the route's pool fee. If a route is unavailable or the floor cannot be met, the in-kind Stock Token payout is used. You can choose in-kind payouts in Portfolio.
 
-### What happens in a week nobody buys?
+## Writing and makers
 
-You keep the stock. Nothing is written. No fee. Settle after expiry to unlock listed lots.
+**Does placing an ask earn premium or lock collateral?** No. A write-on-fill ask earns premium and locks the corresponding collateral only when bought. Under the proposed v7 design, mint also charges time-based rent from the writer's free collateral balance, in Stock Tokens for a call or USDG for a put. An unfilled ask pays no rent but can later lack enough free collateral for both the lock and the fee.
 
-### Why was my fill refused?
+**How do I leave a short early?** Buy the matching long and call `close` before the series settles. Closing before expiry returns unused rent to whoever closes, in the collateral asset. A close at or after expiry returns no rent. The cost of buying the long can exceed the premium received or the refund. A short transfer can move the eventual refund to another holder.
 
-The account re-checks at fill time. Usual reasons: spot rose through the 3% OTM floor or the 0.40% premium floor; the sale window closed at the exercise timestamp; writes are halted; the oracle is stale or paused; the lot already filled or the account settled; not enough USDG or no Seaport approval. See [Buying calls](../product/buying-calls.md).
+**Can auto-roll leave an in-the-money ask open?** The proposed v7 `cancelStale` lets anyone cancel the tracked ask's unfilled remainder when a fresh oracle spot reaches its strike. It is a transaction, not automatic protection: a buyer can fill first, and an unavailable or stale oracle cannot trigger it. A cancelled ask is not replaced before that expiry.
 
-### What fees do I pay?
+**Does the maker-vault cap protect all treasury value?** No. The proposed v7 cap limits net USDG paid through quoter-initiated trades and bids with a 24-hour refill. It does not bound the option value sold, settlement losses or admin actions. See [Market makers](../market/market-makers.md).
 
-5% of the ask, taken in the Seaport order. Never on deposits, idle NVDA, strike proceeds, or an unfilled week. Ceiling 20%. Valorem's 15 bps engine fee is off. See [Fees](../product/fees.md).
+**Does a maker score pay a reward?** Not by itself. The operator must fund an epoch, publish an allocation file, and post its root on chain. A maker then verifies and claims its allocation.
 
-### Can I withdraw at any time?
+## Access and status
 
-Idle NVDA: yes. Listed lots: after `settle`, once that account's expiry has passed. There is no redeem queue.
+**Is v2 live?** A separate v2 contract set and NVDA test book were recorded on chain 4663 for a dev preview on 18 September 2026. That is not a public production release, and these pages do not publish production v2 addresses. The existing NVDA v1 product has different contracts and rules; see [Moving from v1](../legacy/moving-from-v1.md).
 
-### Does my USDG expire?
+**Can I migrate a v1 position?** No contract converts it. A v1 writer settles and withdraws after the old lot runs off, then deposits into v2 separately. A v1 buyer uses the legacy exercise flow while its option is live.
 
-No. Premium is already in your wallet. Strike USDG sits in the account until you collect it.
+**Are alerts required?** No. Telegram, browser push, or email alerts are optional and can fail or arrive late. Check your wallet and on-chain status directly.
 
-### What if the keeper stops running?
+## Related
 
-It can skip a week (`setWeek` is keeper-only) and leave requested lots unlist. It cannot trap NVDA: idle withdraws still work, live lots still fill on chain, and anyone can `settle` after that account's expiry.
-
-### What if the issuer freezes NVDA transfers?
-
-Deposits, idle withdrawals and fills that move NVDA stop. Premium already paid to your wallet is yours. A claim that cannot be redeemed waits for a later `settle`. An issuer burn of tokens in your account is a loss of that NVDA.
-
-### Can the team change the rules, or take my tokens?
-
-Factory admin is a single hot key (`0xEb82…9d9b`) with no timelock, and it is also the fee recipient. It can change policy inside compiled caps, the cap, the fee recipient and roles. It has no function that transfers your tokens. The keeper cannot withdraw. The guardian can only halt writes. See [Roles and admin powers](../protocol/roles.md).
-
-### Can I use Stonkhouse from the United States?
-
-No. Stonkhouse is not available to US persons, including buying calls. The restriction is in the Terms of Use; there is no technical block.
-
-### Who operates Stonkhouse, and which terms apply?
-
-`stonkhouse.fun/terms` and `/privacy` cover the site and the app. No operating entity and no governing law have been designated yet.
-
-### I bought a call. How do I exercise it?
-
-On `app.stonkhouse.fun/book`, during that option's window. Week 1: from Friday 18 September 2026, 4:00pm ET, until that seller's expiry (base Saturday 19 September 2026, 4:00pm ET, plus the account index in seconds). You can also call `exercise` on the clearinghouse `0x53d7…C6` after approving strike × contracts in USDG.
-
-### Earlier material mentions Overcall, a vault, or `/vault/nvda/cycle`.
-
-Overcall is history. `/vault/nvda/cycle` redirects to `/book`. The pooled vault is closed; `/vault/nvda` and `/collect` are only for leftover `cNVDA` redemptions.
-
-### How do I report a security issue?
-
-Email **security@stonkhouse.fun**. Do not open a public issue. There is no bug bounty. See [Security and audits](../protocol/security.md#reporting-a-vulnerability).
+* [Documentation home](../README.md)
+* [Glossary](glossary.md)
+* [Moving from v1](../legacy/moving-from-v1.md)
+* [Risks](risks.md)

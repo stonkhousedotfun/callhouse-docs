@@ -1,53 +1,54 @@
-# Security and audits
+# Security
+
+Read the v2 review status and the risks the contracts cannot remove before depositing or buying a contract.
 
 {% hint style="warning" %}
-**The live factory is on Robinhood Chain and has had no external audit.** No external security firm has reviewed the contracts yet. An external audit is pending, with no report yet. The reviews below were done by the team, mostly against the earlier pooled vault that led to write-on-fill. They are not a substitute for an audit. Factory admin is one hot key with no timelock, and there is no bug bounty.
+Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
-Source paths refer to the `callhouse-contracts` repository unless marked as the app repository. The threat model and review record are in `SECURITY.md` there.
+{% hint style="danger" %}
+The dev deployment has one hot admin key without a timelock. This design can change future series terms and rent rates, set a stuck settlement price under contract rules, and act outside the maker-vault outflow cap. Verify production role holders before funding a position.
+{% endhint %}
 
-## Status
+Where the prose and the code disagree, the code is the specification. The review status below distinguishes a test deployment from a public production release.
 
-| Item | State |
+## Review status
+
+| Check | V2 status |
 |---|---|
-| External audit | **None yet; pending.** Owner decision D14 (2026-09-13) was against one; on 2026-09-15 it was made pending |
-| Mainnet | Live factory `0xc4A5…2BBb` (2026-09-15). Implementation `0xe412…45EC`. Addresses on [Contracts and addresses](addresses.md) |
-| Admin key | One hot EOA holds `DEFAULT_ADMIN_ROLE`, with no timelock. A Safe handover is planned and has not happened |
-| Monitoring and alerts | **Not wired.** Keeper alerts stay in its log |
-| Bug bounty | **None.** Report to security@stonkhouse.fun |
-| Upgradeability | Implementation is locked. A defect fix means a new factory and new accounts |
+| External audit | None. The v2 contracts are unaudited. No report is available. |
+| Internal test gate | Foundry build, formatting, unit, regression, fuzz, invariant and chain-4663 fork tests. `V2DocsNumbersTest` asserts the numbers used in these docs. |
+| Integration | `LifecycleTest` exercises calls and puts from series creation through payout; stateful invariants exercise balances under pauses, issuer faults and oracle failures. |
+| Deployment | A separate chain-4663 dev test set exists; no public production v2 address record is established here. A local fork and the dev set do not establish a public production release. |
+| Bug bounty | None announced. Reports go to the security contact below. |
 
-## What the live accounts inherited
+Tests demonstrate the cases they cover; they do not establish that the contracts or external dependencies are free of vulnerabilities. The earlier v1 vault's internal reviews do not audit v2.
 
-Write-on-fill and unique option types exist because of the 2026-09-13 vault findings:
+The interface v7 source includes collateral rent, stale auto-roll cancellation and a vault outflow cap. Their presence in code or a dev deployment does not establish audited security, final production configuration, consumer integration or public availability. These controls are **not live in a public production release**.
 
-- **AF-01 (High), pre-redesign:** writing unsold calls into a shared Valorem bucket let a third party take ITM value of unsold writes. **Fix:** write only inside a fill, 1 NVDA per lot; each account uses expiry `base + index` so Stonkhouse writers do not share a type.
-- **AF-02..05** (stranded claims, payout legs, utilisation, honest NAV) were vault-share problems. Isolated accounts have no shares and no redeem queue. `settle` after expiry is permissionless; a failed Valorem redeem leaves the claim for a retry.
+## Risks that remain
 
-The 2026-09-14 internal pass over the redesigned **vault** reported no Critical / High / Medium, and one Low (L-01: a contract buyer depositing inside its own fill to skim vault premium). L-01 does not apply to isolated accounts: premium is paid to the owner's wallet in the Seaport order, not into a share index.
+- **Admin key.** One hot admin key without a timelock can set the configuration pinned by future series, move current spot, change payout routes, announce book fees and resolve stuck prices after 48 hours. A live series keeps its pinned settlement sources and rules. A listed source's pin failure blocks the first series of an expiry or adoption of a pin after Clearinghouse migration; later series on that pinned expiry reuse it. Two agreeing sources pinned before creation can still finalise without a guardian delay. If no pinned source ever answers, `adminResolve` can set any positive price after 48 hours. After seven days, a Held expiry with exactly one recorded usable price can be resolved within 0.8× to 1.25× that price; the admin can grant itself the guardian role to place that hold. This creates a wider price-setting risk for single-source expiries.
+- **Stock Token issuer.** Pauses, blocklists, burns, multiplier changes and upgrades can stop or reduce withdrawals and payouts. A ledger credit records a claim but cannot force the issuer to honour it.
+- **USDG issuer.** A pause, freeze, wipe or burn can stop or shrink put collateral, bid escrow, owed balances, bounty budgets and USDG payouts.
+- **Sequencer.** Robinhood Chain 4663 has one sequencer and no uptime feed. Censorship or an outage can delay fills or miss the pool's 10-minute snapshot grace.
+- **Oracle precision.** A valid push-feed print can lag the market near a strike; the final 30-minute average may differ from an official close. A single source or disagreement waits through the candidate delay but can still produce an unfavourable final price.
+- **Liquidity and conversion.** Pool liquidity can leave. An in-the-money call may pay Stock Tokens when conversion fails; a successful swap can be below settlement value within the protocol's base bound plus that route's pool fee, subject to a 300 bps total ceiling. The payout route can change before redemption.
+- **Keeper liveness.** Lifecycle calls are permissionless, but someone must send them and pay gas. A missing keeper delays settlement and redemption; it does not change token ownership.
+- **Fees and book execution.** A book-fee change is announced 24 hours before it takes effect. A pending change can be replaced or cancelled; makers can cancel or replace orders during the notice. Resting orders use fees effective at their fill, and a taker's price limit does not cap its fee. A take submitted before activation but mined after it can pay the new fee. The sequencer's order decides which competing take reaches an order first.
+- **Rent and writer liquidity.** The admin may change a market's collateral-rent rate for new series without a delay; already created series keep their rate. Rent is charged on every mint, in Stock Tokens for calls or USDG for puts, and can make a write-on-fill ask unfillable when free collateral lacks headroom. The rent can exceed the premium from a cheap ask; a direct pre-mint pays it even if the long never sells. A pre-expiry close returns unused rent to the closer, who may differ from the original writer; at or after expiry there is no refund. Stock Token rent also creates a treasury balance in each affected token.
+- **Stale-ask cancellation.** Anyone can cancel a tracked auto-roll ask after a fresh oracle spot reaches its strike, and the pricer cannot reprice that ask while it is in the money. A fill may occur before the cancellation transaction, or after an off-chain price move that the oracle has not yet printed. An oracle pause, stale feed or missing keeper can delay cancellation. A cancelled ask is not replaced within the same expiry period, so the writer may miss premium.
+- **Vault outflow cap.** The cap limits net USDG paid through quoter calls with a 24-hour refill; a full budget plus refill can allow about twice the cap over 24 hours. It does not limit option value sold or settlement losses. Legitimate bids can be throttled. Treasury admin actions are exempt; the quoting key must not also hold the admin role.
 
-That review is not an audit of `src/solo/Account.sol` or `AccountFactory.sol`.
-
-## Trust table (live product)
-
-| Actor | Can move your NVDA? | Worst case if compromised |
-|---|---|---|
-| Factory admin | No transfer function | Policy to compiled floors, fee to 20%, cap to 0, grant itself keeper |
-| Keeper | No | Week at the floor; list lots you already requested |
-| Guardian | No | Halt lists and fills |
-| Seaport | Only during a fill of a live lot | Standard Seaport 1.6 |
-| Valorem Clear | Written collateral only | Engine fee switch on `feeTo`; assignment inside your type |
-| Stock Token / USDG issuer | Yes, on tokens they issued | Pause, freeze, burn |
-| App / indexer | No | Wrong UX; you still sign |
+See [Roles](roles.md) for the exact functions and compiled bounds, [Oracle and settlement](oracle-and-settlement.md) for the fallback paths, and [Risks](../resources/risks.md) for buyer and writer outcomes.
 
 ## Reporting a vulnerability
 
-Email **security@stonkhouse.fun**. Do not open a public issue. There is no bug bounty.
-
-`stonkhouse.fun/legal` and `/.well-known/security.txt` repeat this. `callhouse.xyz` is not a Stonkhouse domain.
+Email **security@stonkhouse.fun**. Do not open a public issue or send exploit details to a public channel. There is no bug bounty.
 
 ## Related
 
-* [Roles and admin powers](roles.md)
-* [Risks](../product/risks.md)
-* [Architecture](architecture.md)
+* [Risks](../resources/risks.md)
+* [Roles](roles.md)
+* [Oracle and settlement](oracle-and-settlement.md)
+* [Addresses](addresses.md)
