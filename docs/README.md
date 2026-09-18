@@ -1,72 +1,47 @@
-# StonkHouse Docs
+# Stonkhouse Docs
 
-Stonkhouse lets you put NVDA Stock Tokens to work on Robinhood Chain (chain id 4663). You deposit into **your own account** and choose how much is for sale each week. If someone buys, you get paid in USDG. If they don't, you keep the stock. Only the amount you offered can be sold.
-
-The first market is the **NVDA Stock Token**. Deposit at `app.stonkhouse.fun/account`. Buy at `app.stonkhouse.fun/book`. Factory: `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb`.
-
-There is no protocol token, no points programme and no airdrop. Premium is paid to your wallet on the fill, less 5%. Strike USDG from assignment sits in the account until you collect it. The account implementation is locked; a fix would need a new factory and new accounts.
+Stonkhouse is building a market for Stock Token options on Robinhood Chain (chain id `4663`). In v2, you can compare the full cost and possible payout of a call or put, buy from an order book in 0.01-share steps, sell a long before expiry, or deposit collateral and set your own ask. A shared Clearinghouse prices each series at expiry and pays holders through permissionless redemption.
 
 {% hint style="warning" %}
-**Read these before anything else.**
-
-* **Premium is paid only if a buyer fills.** A week with no buyer pays zero premium. Because calls are written only when they are bought, a week with no buyer also writes nothing.
-* **Assignment can take the collateral at the strike.** Only lots you chose to write, and that actually sold, can be assigned. The upside above the strike is given up on those lots, and v1 does not buy the stock back.
-* **Idle NVDA is not written.** Lots you did not request cannot be assigned.
-* **Stock Tokens are debt securities.** They are issued by Robinhood Assets (Jersey) Limited. They are not Nvidia shares and carry no vote, and the issuer can pause transfers, blocklist addresses (your account included) and burn tokens from any address.
-* **Stonkhouse is not available to US persons.** This is a restriction in the Terms of Use, not a technical control.
-* You can lose the collateral you deposit.
+**Read the risks before trading.** Most options expire worthless. A buyer can lose the full purchase cost, including the taker fee. A writer can lose collateral value and gives up upside above a covered call's strike on filled units. Stock Tokens are debt securities issued by Robinhood Assets (Jersey) Limited, not company shares. Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stonkhouse is not available to US persons. See [Risks](resources/risks.md).
 {% endhint %}
 
-## Status
+## Release status
 
-{% hint style="danger" %}
-The factory is `0xc4A5Cd0DE91CaB7F5Ebe2114bc63Fbb43E642BBb` on chain 4663. Every address is on [Contracts and addresses](protocol/addresses.md).
+| Product | Status in this documentation draft | Rules |
+|---|---|---|
+| V2 shared market | A separate chain-4663 dev deployment and preview were recorded on 18 September 2026; public production addresses are not published here | This guide's Getting started, Buying, Writing, Market, and Protocol sections describe the proposed production release |
+| V1 NVDA solo accounts | Existing product on Robinhood Chain as verified on 16 September 2026; winding down when v2 launches | [Moving from v1](legacy/moving-from-v1.md) and [v1 reference](legacy/v1-reference.md) |
+| Earlier pooled vault | Closed | Legacy collection only; no new deposits or writing |
 
-**Admin is a hot wallet with no timelock.** See [Roles and admin powers](protocol/roles.md).
-{% endhint %}
+V1 positions do not move into v2 automatically. Do not use a v1 factory address for a v2 trade. Check the current app and [Addresses](protocol/addresses.md) before signing. Where these pages and the code disagree, **the code is the specification**.
 
-* Stonkhouse's clearinghouse, `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`, is not yet source-verified; its runtime bytecode equals Valorem's upstream code apart from the metadata hash.
-* The keeper's alerts are logged but not yet delivered to any channel.
-* The earlier pooled vault (`cNVDA`, `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`) is closed. Collect leftover redemptions at `app.stonkhouse.fun/collect`.
+The v2 guides describe interface v7 behaviour, not a production trading offer or a live quote. Contract source, generated ABIs, app and indexer consumers, approved per-market rates, replay and end-to-end acceptance must agree on the final reviewed revision before publication. The dev deployment does not fill the production [address table](protocol/addresses.md). The historical v1 fee and lifecycle rules remain in the Legacy section.
 
-These docs contain no performance figures. Live week 1 (set 2026-09-15): strike 223 USDG, ask 1.000000 USDG, exercise Friday 18 September 2026, 4:00pm ET.
+## Start here
 
-## Official domains
+- **Buying:** [How Stonkhouse works](getting-started/how-it-works.md) → [Buying your first contract](getting-started/buying-your-first-contract.md) → [Payoff cards](buying/payoff-cards.md). The card's **Pay · max loss** includes the taker fee; scenario payouts are net of the exercise fee.
+- **Writing:** [Selling calls on your stock](getting-started/selling-calls-on-your-stock.md) → [Deposits and collateral](writing/deposits-and-collateral.md) → [Setting your ask](writing/setting-your-ask.md). Premium is paid only when a buyer fills.
+- **Trading and settlement:** [Order book](market/order-book.md), [Selling before expiry](buying/selling-before-expiry.md), [Settlement and payout](buying/settlement-and-payout.md), and [Fees](product/fees.md).
+- **Checking the system:** [Markets](product/markets.md), [Oracle and settlement](protocol/oracle-and-settlement.md), [Roles](protocol/roles.md), [Security](protocol/security.md), and [Risks](resources/risks.md).
 
-| Where | What it is |
+## Network and domains
+
+| Where | Purpose |
 |---|---|
-| `stonkhouse.fun` | The public site. It explains the product and never asks for a wallet. It carries the Terms of Use (`/terms`), the privacy notice (`/privacy`), the perimeter disclosure and vulnerability reporting (`/legal`), and `/.well-known/security.txt`. |
-| `app.stonkhouse.fun` | The app. `/` is the product home and does not ask for a wallet. Deposit and write on `/account`. Buy lots on `/book`. |
-| `docs.stonkhouse.fun` | These docs: depositor and buyer documentation and the protocol reference. |
-| [x.com/stonkhousefun](https://x.com/stonkhousefun) | X. |
-| [github.com/stonkhousedotfun](https://github.com/stonkhousedotfun) | Source. |
+| [app.stonkhouse.fun](https://app.stonkhouse.fun/) | Connect a wallet, view the v2 market when launched, and access `/legacy` for v1 positions. |
+| [stonkhouse.fun](https://stonkhouse.fun/) | Product information, terms, privacy notice, and reporting links. |
+| [docs.stonkhouse.fun](https://docs.stonkhouse.fun/) | These guides and the protocol reference. |
+| Robinhood Chain 4663 | Contracts and transactions. You need ETH on this chain for gas. |
 
-Security reports go to **security@stonkhouse.fun**. See [Security and audits](protocol/security.md#reporting-a-vulnerability). `callhouse.xyz` is not a Stonkhouse domain.
-
-## What you need
-
-Everything happens on Robinhood Chain: chain id `4663`, RPC `https://rpc.mainnet.chain.robinhood.com`, explorer `https://robinhoodchain.blockscout.com`.
-
-| | To deposit | To buy calls | To exercise |
-|---|---|---|---|
-| ETH on chain 4663 | Gas | Gas | Gas |
-| NVDA Stock Token, `0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC` (18 decimals) | The amount you deposit | | |
-| USDG, `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` (6 decimals) | | The premium | The strike for each contract |
-
-You also need MetaMask or Phantom in the browser. The app's Connect button lists only those two; there is no WalletConnect or mobile QR connection, and other injected wallets are not offered.
-
-The route in the team's own launch runbook: bridge a little ETH to chain 4663, swap ETH for USDG, then swap USDG for NVDA. A Uniswap V3 USDG/NVDA pool is at `0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3` (0.05% fee tier; source verified on Sourcify). Stonkhouse runs no bridge or pool and does not vouch for either. The Stock Tokens are offered outside the United States under their issuer's own terms, and you must be eligible to hold them under those terms.
-
-## Where to go next
-
-* [How Stonkhouse works](getting-started/how-it-works.md): the week end to end, in six steps.
-* [Depositing](getting-started/depositing.md), [Withdrawing](getting-started/withdrawing.md) and [Claiming USDG](getting-started/claiming-usdg.md): what each action does and what can block it.
-* [Buying calls](product/buying-calls.md): how a buyer fills a listed lot, and how to exercise.
-* [Fees](product/fees.md) and [Assignment](product/assignment.md): the two things that decide what a week leaves you with.
-* [Risks](product/risks.md): the full list. Read it before depositing.
-* [Launch policy and hard caps](product/policy.md): the limits compiled into the contracts.
-* [Architecture](protocol/architecture.md) and [Accounting](protocol/accounting.md): the technical reference.
+USDG pays option premiums and secures puts. Covered calls require the relevant Stock Token. Neither Stonkhouse nor these docs supply a bridge, a wallet, or an issuer account. Market availability and addresses belong on the generated [Markets](product/markets.md) page and the final [Addresses](protocol/addresses.md) page; a planned market is not yet tradable.
 
 ## No affiliation
 
-Stonkhouse is an independent project. It is not affiliated with, endorsed by, or operated by Robinhood Markets, Inc., Robinhood Assets (Jersey) Limited, Valorem, or the issuers of USDG or Seaport. Nothing in these docs is investment, legal or tax advice, and nothing here is an offer of securities.
+Stonkhouse is independent. It is not affiliated with, endorsed by, or operated by Robinhood Markets, Inc., Robinhood Assets (Jersey) Limited, Valorem, or the issuers of USDG. Nothing here is investment, legal, or tax advice, or an offer of securities. Send security reports to **security@stonkhouse.fun**; see [Security](protocol/security.md).
+
+## Related
+
+- [FAQ](resources/faq.md)
+- [Glossary](resources/glossary.md)
+- [Risks](resources/risks.md)

@@ -1,103 +1,79 @@
 # Architecture
 
-Stonkhouse is an isolated-account covered-call product on Robinhood Chain (chain id 4663). The factory clones one account per user. Each account holds **that** user's NVDA, lists its own 1-lot Seaport orders, and writes into Valorem only inside a buyer's fill. Premium is paid to the owner's wallet on the fill. Off-chain services support it: a keeper, an indexer, and a web app. None of them holds or can move depositor funds.
-
-This page covers the components, the Seaport zone hooks, and the behaviours integrators most often misread. Money maths is on [Accounting](accounting.md), permissions are on [Roles and admin powers](roles.md), and addresses are on [Contracts and addresses](addresses.md).
+Follow a v2 contract from a shared series to a payout. The contracts hold your collateral and option tokens; the indexer, app and bots read or call them but hold no user funds.
 
 {% hint style="warning" %}
-The factory is live on Robinhood Chain (deployed 2026-09-15) and has had no external audit. Admin is one hot key with no timelock.
+Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
-Source paths refer to the `callhouse-contracts` repository (`src/solo/`, `src/Policy.sol`, `src/lib/`) unless marked as the app repository. Where the prose and the code disagree, the code is the specification.
-
-{% hint style="info" %}
-**History.** The first live product was a pooled ERC-20 vault (`src/Vault.sol`, symbol `cNVDA`) at `0x88a98931E3682137E7e4D3426f623247f4A4ecbb`. It is closed. Collect leftover redemptions at `app.stonkhouse.fun/collect`. Earlier still, designs listed through Overcall. The live factory does none of that.
-{% endhint %}
+Where the prose and the code disagree, the code is the specification. Contract behaviour below follows the public `callhouse-contracts/src/v2/` source.
 
 ## Components
 
-```
-  owner wallet
-   NVDA in / idle NVDA out / premium USDG in on fill / strike USDG claimed
-        |
-        v
-+------------------------------------------------------------------+
-| WriterAccount  (clone of src/solo/Account.sol)                   |
-|   holds that user's NVDA                                         |
-|   is the Seaport offerer AND zone of its own 1-lot orders        |
-|   write-on-fill: 1 NVDA per authorizeOrder                       |
-+-----+-------------------------+-----------------------+----------+
-      |                         ^                       |
-      | write (inside a fill),  | authorizeOrder /      | reads spot
-      | redeem the claim        | validateOrder         | (list, fill)
-      v                         | (Seaport calls these) v
- Valorem Clear              Seaport 1.6            Chainlink RHNVDA/USD
- (collateral, option        (validate, cancel,     AggregatorProxy
-  ERC-1155, claim NFT)       counter; buyers fill)
+```text
+buyer or writer ── OrderBook ── Clearinghouse ── collateral and ERC-1155 tokens
+      │                 │               │
+      │                 │               ├── ExpiryCalendar
+      │                 │               ├── SettlementOracle ── Chainlink / Uniswap v3
+      │                 │               └── PayoutAdapter ── Uniswap v3 router
+      │                 └── MakerRegistry
+      └── AutoRoller ── OrderBook
 
- factory (src/solo/AccountFactory.sol)
-   clones, week, policy, roles, pending[] / live[]
+keepers ── snapshot / finalize / settle / prune / redeem / roll
+             └── KeeperRewards pays eligible calls from treasury USDG
 ```
 
-### Factory and account
+| Contract | What it holds or does |
+|---|---|
+| `Clearinghouse` | Holds deposited USDG and Stock Tokens, free balances, locked collateral, rent held until close or settlement, and accrued exercise and rent fees. Creates series and mints transferable long and short ERC-1155 tokens. Settles and redeems them. |
+| `OrderBook` | Holds USDG backing bids, longs backing resale asks and failed USDG payments in `owed`. A write-on-fill ask locks collateral only when filled. |
+| `SettlementOracle` | Pins settlement sources and rules when the first series of an expiry is created, then stores one price and status per underlying and expiry. It holds no tokens. Chainlink round history and a recorded Uniswap v3 window are its enabled sources. |
+| `ExpiryCalendar` | Validates 16:00 New York session-day expiries and stores holidays and special expiries. |
+| `AutoRoller` | Stores each writer's strategy and current order. It holds no collateral. |
+| `UniV3PayoutAdapter` | Converts an eligible in-the-money call payout into USDG. It holds nothing between calls; the Clearinghouse checks what the holder received. |
+| `KeeperRewards` | Holds treasury USDG for bounded bounties. Lifecycle calls still work if it cannot pay. |
+| `MakerVault`, `MakerRegistry`, `RewardsDistributor` | Hold treasury market-making inventory, rebate tiers and weekly reward funds or roots. They do not hold user collateral. |
 
-`AccountFactory` is AccessControl. It deploys one `WriterAccount` implementation, locks it, and clones it per `createAccount`. Immutables (asset, USDG, Clear, Seaport, feed, conduit key, factory) live on the implementation. Each clone stores `owner` and a unique `index` starting at 1.
+`DataStreamsSource` is built but disabled for every market pending owner access. Pyth Pro is outside v2.0. The app, indexer, pricing service and cranker are off-chain readers and callers, not custodians.
 
-`Policy` is compiled into the account bytecode as a library of pure checks. `ValoremLib` is a linked public library, reached by `DELEGATECALL`, so `address(this)` inside it is the clone.
+## Life of a contract
 
-### External contracts
+Let `E` be expiry at 16:00 New York on an NYSE session day. All times below are compiled or checked by `ExpiryCalendar`.
 
-| Contract | Role | Trust notes |
+| When | What happens |
+|---|---|
+| From 45 days to 1 hour before `E` | Anyone may create a valid series. Its oracle, exercise fee and proposed v7 rent rate are pinned; the first series for its underlying and expiry also pins the settlement sources and rules. A failed source pin prevents that first creation or adoption after Clearinghouse migration; later series on the same pinned expiry reuse the settlement pin. |
+| Until `E − 30 minutes` | You may deposit and mint a long and short pair, or post a write-on-fill ask. The book also trades existing longs. |
+| From `E − 30 minutes` to `E` | No new units may be minted. Bids and resale asks can still fill. |
+| At `E` | Book trading ends. A holder of both sides may still `close` until settlement. |
+| `E` to `E + 10 minutes` | Anyone may snapshot the pool's exact final 30-minute window. |
+| From `E + 2 minutes` | Anyone may ask the oracle to finalise. Corroborated sources finalise at once; one source or disagreement starts a delay. |
+| After the price is final | Anyone may settle each series, prune escrowed orders and redeem eligible holders through separate transactions. A failed transfer becomes a free-ledger credit. |
+
+The `LifecycleTest` contract in `callhouse-contracts/test/v2/` runs this path for calls and puts, including in- and out-of-the-money outcomes.
+
+## External trust
+
+These examples of external controls were checked on chain 4663 on 17 September 2026. Role holders, token controls and pool conditions can change after that observation; verify their current state before relying on them.
+
+| Party | Power or dependency | Protection and limit |
 |---|---|---|
-| Valorem Clear | Holds written collateral, mints the option ERC-1155 and the claim NFT, settles exercise | Each account is the writer and keeps its own claim NFT. Assignment is per option type. Types are unique per account because expiry includes `index`. The Clear has no owner, no pause and no proxy; `feeTo` holds the 15 bps engine fee switch |
-| Seaport 1.6 | Marketplace. Each account is offerer and zone of its lots | Orders are `FULL_RESTRICTED`, 1 contract, validated on chain. Seaport calls `authorizeOrder` before transfers and `validateOrder` after |
-| Chainlink RHNVDA/USD | Spot for the OTM band and premium floor at `list` and at every fill | Display plus a gate. Settlement never reads a price |
+| Chainlink feed owner | A 4-of-9 Safe (`0xeE27D5Ae494300902D90454e8630A3F1C68c9C52`) can switch the NVDA or TSLA feed aggregator. | The source rejects stale, malformed and large-jump rounds. A usable pool can corroborate; otherwise a candidate waits. |
+| Uniswap v3 pool | Traders can move its price and liquidity can leave. The observed NVDA/USDG pool is `0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3`. | A minimum-liquidity gate applies; disagreement waits for a veto window. A separate conversion floor includes the payout route's pool fee. |
+| Stock Token issuer | Can pause, blocklist, burn, change multiplier or upgrade token logic. | A contract cannot force the issuer to reverse those actions. Withdrawals and payouts can wait in the ledger while transfers fail. |
+| USDG issuer | Can pause, freeze, wipe or burn USDG. | Put collateral, bids, owed balances and payouts depend on USDG remaining transferable and backed. |
+| Robinhood Chain sequencer | Orders or censors transactions; no on-chain uptime feed is available. | A missed snapshot leaves a single-source candidate; an outage can delay every user action. |
 
-### Off-chain services
+## Things that can look wrong
 
-**Keeper.** Hot EOA with `KEEPER_ROLE`. Sets the factory week (strike, timestamps, ask), calls `listFor` on pending writers, and does not hold tokens. Factory weeks are priced from spot (5% OTM, 0.40% ask floored at 1 USDG), not Cboe vol mode.
-
-**Indexer.** Reads events. Holds no keys.
-
-**Web app.** `app.stonkhouse.fun`. `/account` deposits, offers, settles, collects. `/book` buys and exercises. Connect lists only MetaMask and Phantom.
-
-**Alerts.** Logged by the keeper, not delivered to any channel.
-
-## Write on fill
-
-`list` posts N validated 1-lot orders and reserves N NVDA. It writes nothing.
-
-On fill, `authorizeOrder`:
-
-1. checks the order is a live listing of this account, offer is 1 option token, consideration USDG totals the pinned ask, first recipient is `owner`
-2. drops that order from `liveListing`, reduces `reserved` by 1 lot
-3. `ValoremLib.writeOnFill` writes 1 NVDA
-4. `validateOrder` reverts if any option token stayed in the account
-
-Premium never enters the clone: Seaport pays the owner and the fee recipient directly.
-
-## Unique option types
-
-```
-expiryTs = factory.week.baseExpiryTs + account.index
-```
-
-Same strike and exercise for the week; expiry offset so Valorem buckets cannot mix Stonkhouse writers.
-
-## Settle
-
-After `listedExpiryTs`, anyone may `settle()`. Leftover orders are cancelled via `incrementCounter`, reserved NVDA unlocks, and a written claim is redeemed if Valorem allows. If redeem fails, the listing is still cleared; call `settle` again later.
-
-## Things that look wrong but are not
-
-1. **Premium does not show in the account.** It went to the owner's wallet on the fill. The account's USDG is strike proceeds (and anything else sent there).
-2. **Idle NVDA is not for sale.** Only `requestedLots` that were listed can fill or assign.
-3. **A later `setWeek` cannot move a listed account.** Terms are pinned on `list`.
-4. **Anyone can `settle` after expiry.** That is how a stopped keeper cannot trap reserved NVDA.
-5. **The implementation is a clone target, not a wallet.** `lockImplementation` ran in the factory constructor.
+- **An in-the-money call can pay Stock Tokens.** USDG conversion is attempted by default. The protocol sets a base shortfall bound and adds the route's pool fee, subject to a total ceiling. A failed swap or a swap below that floor pays in kind; you can also choose in kind.
+- **A single-source price waits.** The default uncorroborated delay is six hours. It gives the guardian time to veto; no settlement occurs while the candidate is pending.
+- **The UTC close shifts.** 16:00 New York is 20:00 UTC in daylight saving time and 21:00 UTC in standard time. The series expires at the local session close.
+- **Premium is not in the Clearinghouse.** The book pays the seller and fee recipient during a fill. The Clearinghouse holds collateral and exercise fees; proposed v7 also holds mint rent until a pre-expiry close refunds part of it or settlement accrues the rest.
 
 ## Related
 
+* [Series and tokens](series-and-tokens.md)
+* [Oracle and settlement](oracle-and-settlement.md)
 * [Accounting](accounting.md)
-* [Roles and admin powers](roles.md)
-* [The weekly cycle](../product/weekly-cycle.md)
+* [Security](security.md)

@@ -1,66 +1,41 @@
 # Fees
 
-Stonkhouse charges one fee: **5% of the ask** (`protocolFeeBps` 500). It is taken **inside the Seaport order** as a second USDG payment. Premium exists only when a buyer fills, so a week with no buyer is charged nothing.
-
-On a fill of ask `A`:
-
-* `A × 5%` (rounded down) goes to the factory fee recipient
-* the rest goes to the **seller's wallet** in the same transaction
-
-There is no harvest, no share index, and no `sweepFee` on the live accounts. The seller does not wait to claim premium.
-
-{% hint style="info" %}
-**History.** The closed pooled vault harvested 5% of premium into a USDG index. Isolated accounts do not. Earlier designs also listed through Overcall, which took a second venue cut. The live product does neither.
-{% endhint %}
+See how collateral rent, premium, taker, resale, and exercise fees affect a contract's cost and payout.
 
 {% hint style="warning" %}
-The protocol fee reduces what a filled week pays you. It is never charged on your deposit, on idle NVDA, or on strike proceeds from assignment. The Valorem engine fee, off and not accepted today, would take NVDA out of the account on every fill if it were switched on and accepted.
+Stonkhouse v2 is unaudited and has no public production release. A separate chain-4663 dev deployment is for testing, not public trading. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
-## Fee table
+## Fee schedule
 
-| Charged by | Size | When | How |
+These are the **planned interface v7 settings**, not a live quote or verified deployment. The final per-market rent rates must be checked against the reviewed contracts and deployed market configuration before publication. The admin can schedule adjustable OrderBook rates below their compiled ceilings. A book-fee change is announced on chain and takes effect 24 hours later. A new schedule before activation replaces it and restarts the delay; scheduling the current rates cancels it. A market rent-rate change applies to series created afterwards; a series keeps the rate pinned when it was created. Check the live ticket, effective rates and any pending change in [on-chain configuration](../protocol/addresses.md) before trading. USDG has six decimal places; contract calculations round in base units.
+
+| Fee | Who pays and when | Default | Compiled limit |
 |---|---|---|---|
-| **Stonkhouse protocol fee** | 5% of ask (500 bps) | On every fill | Second Seaport consideration item, USDG, to `factory.feeRecipient()` |
-| **Valorem engine fee** | 15 bps of notional (minimum 1 base unit): NVDA on each write, USDG on each exercise | Off. If switched on and accepted: on every fill. If switched on at all: on every exercise, paid by the exerciser | Pulled by the clearinghouse into its own fee balance |
+| Collateral rent at mint | Writer whenever a new long and short pair is minted, including a write-on-fill ask | Per-market rate times locked collateral and time remaining; the proposed rate varies by market | Proposed design ceiling: 0.5% of collateral per full seven days remaining |
+| Primary premium fee | Seller when a fill creates new long and short tokens | Planned launch setting: 0% of premium | 10% of premium |
+| Resale fee | Seller when an existing long is resold | 0% of premium | 10% of premium |
+| Taker fee | Buyer hitting asks or seller hitting bids, **once per `take` call** | Smaller of 0.10 USDG and 10% of premium | Flat setting at most 1 USDG; cap at most 10% of premium |
+| Maker rebate | Resting order's maker, paid **from** that call's taker fee | 50% of the maker-attributed fee | Never more than that taker fee |
+| Exercise fee | In-the-money long holder at settlement, taken from the payout | 0.25% of collateral per unit | Rate at most 2% of collateral; actual fee at most 10% of gross payout |
 
-### Who holds the Valorem fee switch
+Collateral rent is charged **in the collateral asset**, from the writer's free Clearinghouse balance on every mint: Stock Tokens for calls and USDG for puts. An unfilled write-on-fill ask pays no rent. A direct mint made before listing an existing long pays rent immediately, even if the long never sells. At a given token price, rent can be worth more than the premium from a cheap ask, so a 0% primary premium fee does not make writing free. Closing matching long and short units **before expiry** returns unused rent to whoever closes, in that same asset; the initial charge and refund can differ because time has passed and rounding differs. Closing at or after expiry returns no rent. Any rent still held when the series settles becomes a protocol fee. Transferring a short does not guarantee that its original writer receives a later refund.
 
-Stonkhouse runs its own Valorem clearinghouse at `0x53d7A6d0489Daf3d67b9A314e0eAB2B78Acab9C6`. `feeTo()` is the Safe `0xff1454009F024507f3E455eb2027E98fAF4ccF61` (one owner, threshold 1). Accepting the fee on the factory is a separate admin power (`setValoremFeeAccepted`).
+The exercise fee rate is pinned when a series is created. A later admin change affects new series only. Book fees, including a resting order's seller fee, are those effective when `take` executes; a fee change can activate between submission and inclusion. `TakeParams` has a price limit but no fee limit. You can cancel or replace your resting order during the notice period. No exercise fee is taken from an out-of-the-money long's zero payout. Gas paid to the chain is separate from all table entries. There is no v2 manual exercise payment of the strike.
 
-1. **The Safe's single owner** can switch the engine fee on (`setFeesEnabled`) and sweep collected fees.
-2. **Factory admin** can accept it (`setValoremFeeAccepted(true)`).
+## Worked examples
 
-If the fee is on and **not** accepted, `list` and every fill revert. Exercisers still pay 15 bps of the strike in USDG. If both are on, each fill pulls 15 bps of notional in NVDA from that account. See [Roles and admin powers](../protocol/roles.md).
+**0.01-share ticket.** If its premium is 0.10 USDG, the taker fee is the smaller of 0.10 and 10% × 0.10 = **0.01 USDG**. The buyer pays **0.11 USDG**, its maximum loss on the option; network gas is extra. At the proposed 0% primary premium fee, the resting writer receives **0.10 USDG** premium plus a possible default rebate of **0.005 USDG** from the taker fee. If this fill mints the option, the writer also pays collateral rent in Stock Tokens for a call or USDG for a put. That rent is separate from the buyer's 0.11 USDG cost. A resale seller would pay no resale fee at the planned setting.
 
-### What is never charged
+**One-share ticket.** If the total premium across all filled asks is 2 USDG in one `take` call, the taker fee is the smaller of 0.10 and 10% × 2 = **0.10 USDG**. The buyer pays **2.10 USDG**, its maximum loss on the option; network gas is extra. A writer whose primary ask supplies the whole fill receives **2 USDG** premium at the proposed 0% primary fee, plus a possible **0.05 USDG** default maker rebate. The writer separately needs enough free collateral for the mint and its rent. Several makers split the fee and rebates according to their filled premium; a second `take` call incurs a second taker fee.
 
-* No fee on deposits, withdrawals or USDG claims.
-* No fee on idle NVDA.
-* No fee on strike proceeds from assignment. Strike USDG lands in the account at `settle` and is yours in full.
-* No fee on an unfilled week.
+**In-the-money call.** For an illustrative one-share call with strike 200 USDG and final price 220 USDG, gross intrinsic value is about 20 USDG, paid from locked Stock Token collateral. At the default 0.25% exercise rate, the fee is 0.0025 Stock Token, worth about **0.55 USDG at that final price**. The long's net in-kind value is about **19.45 USDG** before any conversion. A routed USDG payout also bears the pool's swap fee and price impact. The protocol's planned launch conversion floor allows a 30 bps base shortfall plus that route's pool fee, capped at 300 bps total; a failed conversion pays Stock Tokens instead. Actual token rounding, conversion, and the position's purchase cost change its realised result.
 
-### The ceiling
-
-The protocol fee is 5% today. Factory admin can change it with `setPolicy`, never above **20% of the ask** (`PROTOCOL_FEE_CEIL_BPS` = 2000). That ceiling is compiled in. Admin is currently the hot key `0xEb82c3D0F89d47453F94f0C2b2a2752e27a19d9b`, also the fee recipient. A change applies to the next `list` / fill that reads `policy()`. Listed accounts have already pinned their ask and fee split in the Seaport order.
-
-## Worked example: week 1 terms
-
-Live week 1 ask is 1.000000 USDG per lot, strike 223 USDG.
-
-```
-Buyer pays                         1.000000 USDG
-  Protocol fee 5%                  0.050000        to 0xEb82…9d9b
-  Premium to seller's wallet       0.950000
-
-If that lot is later assigned:
-  Strike proceeds                223.000000 USDG   into the account, fee-free
-```
-
-A week with no fill writes nothing and charges 0.
+Historical v1 charged a single 5% fee on the sale's ask through Seaport. The proposed v7 shared market has collateral rent and the separate book, taker, rebate, and settlement charges above. An ask quote is **not** the buyer's all-in cost; a card and ticket include the taker fee, while a scenario payout is net of the exercise fee. Writer rent does not increase buyer cost by itself; a maker may independently choose a different ask.
 
 ## Related
 
-* [Claiming USDG](../getting-started/claiming-usdg.md)
-* [Launch policy and hard caps](policy.md)
+* [Payoff cards](../buying/payoff-cards.md)
+* [Order book](../market/order-book.md)
 * [Accounting](../protocol/accounting.md)
+* [Risks](../resources/risks.md)

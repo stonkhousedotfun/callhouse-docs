@@ -1,2 +1,26 @@
 .DS_Store
 node_modules/
+.cache/
+.turbo/
+coverage/
+dist/
+out/
+
+# Local databases, patch backups and temporary build state.
+*.sqlite
+*.sqlite3
+*.db
+*.patch
+
+# Local credentials; templates and published documentation remain visible.
+.env*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mnemonic
+*.secret
+*.log

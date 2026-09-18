@@ -1,0 +1,49 @@
+# Requires local gitleaks and node; all hooks are check-only.
+# The Git hook is not installed from this linked worktree (shared hook directory).
+minimum_pre_commit_version: '3.2.0'
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks-system
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: public-scope
+        name: Public release scope and whitespace
+        entry: node scripts/check-commit-scope.mjs
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: docs-mirror
+        name: GitBook mirror stays byte-identical
+        entry: node scripts/mirror.mjs --check
+        language: system
+        pass_filenames: false
+        files: '^(docs/|README\.md$|SUMMARY\.md$|roadmap\.md$|getting-started/|buying/|writing/|market/|product/|protocol/|legacy/|resources/|scripts/mirror\.mjs$)'
+      - id: docs-links
+        name: Local Markdown links
+        entry: node scripts/check-links.mjs
+        language: system
+        pass_filenames: false
+        files: '\.md$'
+      - id: docs-copy
+        name: Public copy claims
+        entry: node scripts/copy-lint-docs.mjs
+        language: system
+        pass_filenames: false
+        files: '\.md$'
