@@ -1,7 +1,7 @@
 # Roadmap
 
 {% hint style="warning" %}
-This graphic and its pillars are long-term ideas, not a list of features available today or a release commitment. The fee figures below are historical roadmap proposals, not v2 trading terms; see [Fees](product/fees.md). V2 is unaudited; its live public contract set is the dev-origin chain-4663 deployment, currently with NVDA as its sole registered market. In particular, current v2 code does not have a deployed multisig or timelock, and no Stonkhouse token, staking or buyback programme has been announced. Check [release status](README.md#release-status), [security](protocol/security.md) and [addresses](protocol/addresses.md) before relying on a feature.
+This graphic and its pillars are long-term ideas, not a list of features available today or a release commitment. The fee figures below are historical roadmap proposals, not v2 trading terms; see [Fees](product/fees.md). V2 is unaudited; its live public contract set is the dev-origin chain-4663 deployment, currently with NVDA as its sole registered market. In particular, current v2 code does not have a deployed multisig or timelock, and no staking or buyback programme has been announced. See [Token Supply and Allocation](resources/token-supply-and-allocation.md) for current token allocation information. Check [release status](README.md#release-status), [security](protocol/security.md) and [addresses](protocol/addresses.md) before relying on a feature.
 {% endhint %}
 
 <figure><img src=".gitbook/assets/stonkhouse-roadmap.png" alt="StonkHouse roadmap: Trust &#x26; Safety, A Real Market, Buyer-First App, Revenue Model, Growth Loops and Token Flywheel"><figcaption><p>The StonkHouse roadmap at a glance</p></figcaption></figure>
