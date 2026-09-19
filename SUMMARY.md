@@ -55,6 +55,7 @@
 
 ## Resources
 
+* [Token Supply and Allocation](resources/token-supply-and-allocation.md)
 * [FAQ](resources/faq.md)
 * [Glossary](resources/glossary.md)
 * [Risks](resources/risks.md)
