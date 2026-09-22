@@ -66,10 +66,10 @@ The Admin Safe and the Treasury Safe are 2-of-3, but all three signing keys of e
 | Chain ID | `4663` |
 | Deployment start block | `69512673`, 22 September 2026 at 08:29 UTC |
 | Contract interface version | `8` |
-| Deployed source | `callhouse-contracts` `e468025`, the public release of the deployed revision. Its `src/` tree is byte-identical to the revision the deploy ran from, checked with `git rev-parse <revision>:src`. |
+| Deployed source | `callhouse-contracts` `70dd0c7`, the public release carrying the deployed revision. Its `src/` tree is byte-identical to the revision the deploy ran from, checked with `git rev-parse <revision>:src`. |
 | Registry | `callhouse/ops/markets/tier1.json`, the top-level `v2` block, written back by the deploy, the externals step and the registration step. The interface-7 record is archived separately as `callhouse/ops/markets/v7-legacy.json`. |
 | Launch markets | NVDA and SPCX only. No other market is registered on this set. |
-| Launch verification | The deployer's `VerifyV8` passed on chain twice: 216 checks at the launch gate, and 208 on the read-back afterwards. Three externals that are not deployed were not checked. Receipt fingerprint `0xcbc78758…699f`. This is **not** a third-party audit and **not** explorer source-code verification; the contracts are unaudited. |
+| Launch verification | The deployer's `VerifyV8` passed on chain twice: 216 checks at the launch gate, and 208 on the read-back afterwards. Three externals that are not deployed were not checked. Receipt fingerprint `0xcbc78758…699f`. The checks read the deployed contracts' own configuration and wiring; the repository's pinned-runtime manifest still records the interface-7 set, so no v8 runtime was compared byte for byte against a compiled artifact. This is **not** a third-party audit and **not** explorer source-code verification; the contracts are unaudited. |
 | Hand-back | The deployer key holds no role on the AccessManager: `hasRole(0, deployer)` read back `false` on 22 September 2026. |
 
 ## Launch markets

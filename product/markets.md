@@ -16,7 +16,7 @@ A market is one Stock Token listed on the shared v2 contracts. Every market uses
 
 ## Status and waves
 
-* **`planned`**: not registered according to this registry. It authorizes no series, orders, buying, writing or deposits.
+* **`planned`**: not registered according to this registry. It authorises no series, orders, buying, writing or deposits.
 * **`live`**: registered on the live v2 contracts. Buying and writing require an open series, usable orders and active launch controls; this status alone does not mean an automated strike ladder is running.
 * **`paused`**: registered, but new risk is stopped: no new series and no new contracts written. Contracts already written still settle and pay out; closing, redeeming, withdrawing and cancelling orders cannot be paused.
 

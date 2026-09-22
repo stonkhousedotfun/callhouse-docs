@@ -10,7 +10,7 @@ Stonkhouse v2 is unaudited. Interface v8 is deployed on Robinhood Chain 4663 fro
 One `AccessManager` guards every privileged call on every contract below. Every delayed role sits with one 2-of-3 Admin Safe; a 2-of-3 Treasury Safe receives the protocol's money and holds no role at all. All three signing keys of each Safe are the owner's, so the threshold protects against one stolen key rather than giving independent custody. The guardian, pricer, quoter and buyback roles are hot keys with no waiting period at all, the Admin Safe also holds the guardian and quoter roles with no delay, and the operations role that grants them has none either. Read [Roles](roles.md) before you rely on any of these controls.
 {% endhint %}
 
-Where the prose and the code disagree, the code is the specification. Contract behaviour below follows the public `callhouse-contracts/src/v2/` source, and the deployed set was built from release `e468025`.
+Where the prose and the code disagree, the code is the specification. Contract behaviour below follows the public `callhouse-contracts/src/v2/` source, and the deployed set was built from release `70dd0c7`.
 
 ## Components
 
