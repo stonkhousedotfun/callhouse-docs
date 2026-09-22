@@ -3,20 +3,21 @@
 Stonkhouse is building a market for Stock Token options on Robinhood Chain (chain id `4663`). In v2, you can compare the full cost and possible payout of a call or put, buy from an order book in 0.01-share steps, sell a long before expiry, or deposit collateral and set your own ask. A shared Clearinghouse prices each series at expiry and pays holders through permissionless redemption.
 
 {% hint style="warning" %}
-**Read the risks before trading.** Most options expire worthless. A buyer can lose the full purchase cost, including the taker fee. A writer can lose collateral value and gives up upside above a covered call's strike on filled units. Stock Tokens are debt securities issued by Robinhood Assets (Jersey) Limited, not company shares. Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stonkhouse is not available to US persons. See [Risks](resources/risks.md).
+**Read the risks before trading.** Most options expire worthless. A buyer can lose the full purchase cost, including the taker fee. A writer can lose collateral value and gives up upside above a covered call's strike on filled units. Stock Tokens are debt securities issued by Robinhood Assets (Jersey) Limited, not company shares. Stonkhouse v2 is unaudited. Interface v8 is deployed on Robinhood Chain 4663 from block 69,512,673 (22 September 2026); the launch markets are NVDA and SPCX. Registered markets can change; check the current app and on-chain status before trading. Operational services and market liquidity may be unavailable. Stonkhouse is not available to US persons. See [Risks](resources/risks.md).
 {% endhint %}
 
 ## Release status
 
 | Product | Current status | Rules |
 |---|---|---|
-| V2 shared market | The chain-4663 set first deployed for the 18 September 2026 dev launch is the live public contract set; NVDA is the only registered market | These guides describe interface v7. Check the current app, on-chain status, [Markets](product/markets.md), and [Addresses](protocol/addresses.md) before trading; the initial launch did not include every keeper or market-making service. |
+| V2 shared market (interface v8) | The current public contract set, deployed on Robinhood Chain 4663 from block 69,512,673 on 22 September 2026. The launch set is two markets, NVDA and SPCX; the registry holds 35 rows in all. Both launch markets were registered and enabled for trading that day. Enabled means the contracts accept the trade, not that a quote or a fill is waiting for you, and availability can change. | These guides describe the interface v8 contracts. The launch does not include every keeper or market-making service: the protocol's maker vault is unfunded, the house vaults are not armed and notifications are not running, so a series can be quiet or one-sided. The generated [Markets](product/markets.md) page lists both launch markets as live; where any page and the chain disagree, the chain is the authority. Check the current app, on-chain status and [Addresses](protocol/addresses.md) before trading. |
+| V2 shared market (interface v7) | The set deployed on 18 September 2026 is legacy. Nothing new is registered on it, and a position on it does not move to interface v8. It is not frozen: the contracts are still on chain and still accept creation, so read `createPaused()` and `market()` before assuming they do not. | Exits keep working — resell on the book, cancel, close, settle, redeem and withdraw. Do not open new positions there. See [Interface v7 reference](legacy/v7-reference.md) and the legacy table on [Addresses](protocol/addresses.md). |
 | V1 NVDA solo accounts | Separate legacy product on Robinhood Chain; no automatic migration to v2 | [Moving from v1](legacy/moving-from-v1.md) and [v1 reference](legacy/v1-reference.md) |
 | Earlier pooled vault | Closed | Legacy collection only; no new deposits or writing |
 
 V1 positions do not move into v2 automatically. Do not use a v1 factory address for a v2 trade. Check the current app and [Addresses](protocol/addresses.md) before signing. Where these pages and the code disagree, **the code is the specification**.
 
-The v2 guides describe interface v7 behaviour, not a live quote. The owner has designated the dev-origin chain-4663 deployment as the public contract set; that change in designation does not itself deploy bots, fund bounties, add markets, or make an old order tradable. The historical v1 fee and lifecycle rules remain in the Legacy section.
+The v2 guides describe the behaviour of the interface v8 contracts, not a live quote. Where a page names the interface v7 contracts, that is the legacy market and is labelled as such. Deploying a contract set does not by itself run keepers, fund bounties, arm a vault, add a market or make a legacy order tradable on the current contracts. A position written on interface v7 stays on interface v7. The historical v1 fee and lifecycle rules remain in the Legacy section.
 
 ## Start here
 
@@ -34,7 +35,7 @@ The v2 guides describe interface v7 behaviour, not a live quote. The owner has d
 | [docs.stonkhouse.fun](https://docs.stonkhouse.fun/) | These guides and the protocol reference. |
 | Robinhood Chain 4663 | Contracts and transactions. You need ETH on this chain for gas. |
 
-USDG pays option premiums and secures puts. Covered calls require the relevant Stock Token. Neither Stonkhouse nor these docs supply a bridge, a wallet, or an issuer account. Market availability and addresses belong on the generated [Markets](product/markets.md) page and [Addresses](protocol/addresses.md); a planned market is not yet tradable.
+USDG pays option premiums and secures puts. Covered calls require the relevant Stock Token. Neither Stonkhouse nor these docs supply a bridge, a wallet, or an issuer account. Market availability and addresses belong on the generated [Markets](product/markets.md) page and [Addresses](protocol/addresses.md). That page is generated from the app's market registry. Where any page and the chain disagree, the chain is the authority.
 
 ## No affiliation
 

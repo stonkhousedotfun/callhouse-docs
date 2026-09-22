@@ -3,7 +3,7 @@
 Each v2 series has one expiry, strike and type. Every writer and buyer of that series shares the same long and short token IDs.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. Interface v8 is deployed on Robinhood Chain 4663 from block 69,512,673 (22 September 2026); the launch markets are NVDA and SPCX. Registered markets can change; check the current app and on-chain status before trading. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 Where the prose and the code disagree, the code is the specification. See `callhouse-contracts/src/v2/interfaces/V2Ids.sol`, `Clearinghouse.sol` and `docs/V2-ARCHITECTURE.md` §1.3.
@@ -25,18 +25,18 @@ The low bit is zero for the long and one for the short. `createSeries` checks th
 | 0.1 share | 10 | `1e17` base units | 23 USDG |
 | 1 share | 100 | `1e18` base units | 230 USDG |
 
-The call locks `1e16` Stock Token base units per unit. The put locks `strike / 100` USDG base units per unit. Both are fully funded when minted. In the deployed v7 design, the writer also needs free collateral for the mint's time-based rent. That charge stays outside the locked amount used to calculate payouts.
+The call locks `1e16` Stock Token base units per unit. The put locks `strike / 100` USDG base units per unit. Both are fully funded when minted. A market's collateral-rent rate is charged on top, from the writer's free balance and outside the locked amount used to calculate payouts. Every registered market is set to 0 today, so no rent is charged, but the rate stays a live setting: the market-fee role can raise it, after that role's 72-hour wait, to at most 5,000 parts per million of the locked collateral for each seven days of remaining life.
 
 ## What each side owns
 
 - **Long.** A transferable claim to the series' settlement payout. Longs from different writers are fungible.
 - **Short.** A transferable claim to the collateral left after the long's gross payout. It carries no later cash call because all collateral is locked at mint. Its per-unit value after settlement is `collateralPerUnit − grossPayoutPerUnit`.
 
-Both sides are ordinary ERC-1155 tokens and remain transferable under protocol pauses. The OrderBook trades longs. You can transfer shorts directly. The admin can change the metadata base URI, so do not use a wallet label as proof of the series tuple.
+Both sides are ordinary ERC-1155 tokens and remain transferable under protocol pauses. The OrderBook trades longs. You can transfer shorts directly. The listing role can change the metadata base URI, after that role's one-hour wait, so do not use a wallet label as proof of the series tuple.
 
 ## Mint, close and redeem
 
-`mint` moves collateral and the deployed v7 rent from a writer's free ledger and mints one long and one short per unit. A write-on-fill ask does this inside the fill; merely listing it locks no collateral and charges no rent. The series pins its market rent rate when created. Before settlement, if you hold both sides, `close` burns equal units and returns their full locked collateral to your free ledger. Closing **before expiry** also returns the unused rent for those units to the closer. You can close after expiry until the series settles, but that late close gets no rent refund. At settlement, any rent still held becomes an accrued protocol fee.
+`mint` moves collateral, plus any rent the market charges, from a writer's free ledger and mints one long and one short per unit. It is callable only by an allowlisted minter, and on the deployed contracts that allowlist holds the OrderBook alone, so every mint happens inside a fill: merely listing an ask locks nothing and costs nothing, and there is no route by which a writer mints ahead of a sale. The series pins its market's rent rate when created. Before settlement, if you hold both sides, `close` burns equal units and returns their full locked collateral to your free ledger. Closing **before expiry** also returns the unused rent for those units to the closer. You can close after expiry until the series settles, but that late close gets no rent refund. At settlement, any rent still held becomes an accrued protocol fee.
 
 At settlement the oracle's shared price fixes long, fee and short amounts per unit. `redeem` burns your balance and pays the resulting amount; anyone may call it for a holder who has not opted out of third-party redemption. A short can be worth the whole collateral on an out-of-the-money call. An in-the-money covered-call short retains Stock Tokens worth roughly the strike at the settlement price, subject to base-unit rounding.
 

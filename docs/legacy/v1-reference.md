@@ -3,7 +3,7 @@
 Find the condensed mechanics and addresses for the existing v1 accounts and positions during run-off.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. Interface v8 is deployed on Robinhood Chain 4663 from block 69,512,673 (22 September 2026); the launch markets are NVDA and SPCX. Registered markets can change; check the current app and on-chain status before trading. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 {% hint style="info" %}
@@ -28,7 +28,7 @@ V1 contracts are unaudited. A long can expire without being exercised. A writer 
 | Whole Stock Token call lots | 0.01-share units; calls and, when enabled, puts |
 | Weekly factory terms | Daily and weekly series; writers set their own ask |
 | Manual, physical exercise | Final oracle-price settlement and permissionless redemption |
-| Single 5% sale fee | Deployed v7 collateral rent on every mint, plus primary/resale, taker, maker rebate, and exercise fee settings |
+| Single 5% sale fee | 5% primary premium fee on a first sale, 0% on a resale, plus taker, maker rebate and exercise fee settings; the collateral-rent dial is registered at 0 |
 
 ## Related
 

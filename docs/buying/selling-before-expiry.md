@@ -3,14 +3,14 @@
 See how to accept a live bid or place a resale ask before a contract expires.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. Interface v8 is deployed on Robinhood Chain 4663 from block 69,512,673 (22 September 2026); the launch markets are NVDA and SPCX. Registered markets can change; check the current app and on-chain status before trading. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 ## Two ways to sell a long
 
 **Hit a bid.** Select a live bid on your series page or in Portfolio. You are the taker. You deliver your long tokens and receive the bid premium less the taker fee and any resale fee. Review the net amount and minimum fill before signing.
 
-**List a resale ask.** Set your price, size, and expiry. You grant the OrderBook approval for all your Clearinghouse option tokens; when you list, it escrows only the selected longs. You can revoke approval later. The book holds those longs until someone buys or you cancel. You are the maker when a buyer takes the ask; the buyer pays the taker fee. A maker rebate may be paid from that fee. At the default v2 settings the resale fee is zero. The admin can announce a change under its hard cap that takes effect 24 hours later, including for an ask still open then; you can cancel it during that notice.
+**List a resale ask.** Set your price, size, and expiry. You grant the OrderBook approval for all your Clearinghouse option tokens; when you list, it escrows only the selected longs. You can revoke approval later. The book holds those longs until someone buys or you cancel. You are the maker when a buyer takes the ask; the buyer pays the taker fee. A maker rebate may be paid from that fee. At the registered settings the resale fee is zero; the 5% primary fee applies only to a first sale that mints. A change under the hard cap is announced on chain and takes effect 48 hours later, including for an ask still open then; you can cancel it during that notice.
 
 Resale is possible only before the series expiry, even after the 30-minute cutoff for **new writing**. A bid or ask may disappear or become stale before your transaction lands. There is no promise that an order will fill, and an unfilled ask locks your long tokens away from another sale until you cancel or the order is pruned. After expiry, a resale ask must return its escrowed longs so the holder can be redeemed.
 

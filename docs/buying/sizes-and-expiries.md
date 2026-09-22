@@ -3,7 +3,7 @@
 Choose a contract size in 0.01-share steps and compare daily with weekly expiries.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. Interface v8 is deployed on Robinhood Chain 4663 from block 69,512,673 (22 September 2026); the launch markets are NVDA and SPCX. Registered markets can change; check the current app and on-chain status before trading. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 ## Pick a size
@@ -21,8 +21,9 @@ One unit of an option covers **0.01 share** of its Stock Token. Ten units cover 
 | 26 March 2027 | Thursday 25 March 2027, 16:00 New York |
 | 18 June 2027 | Thursday 17 June 2027, 16:00 New York |
 | 24 December 2027 | Thursday 23 December 2027, 16:00 New York |
+| 14 April 2028 | Thursday 13 April 2028, 16:00 New York |
 
-The holiday set can be updated by the admin. Check the series page for its actual expiry before trading. New series can be created at most 45 days ahead. **Writing stops 30 minutes before expiry**, when the settlement averaging window begins. Existing long tokens can be resold in the book until expiry.
+The table lists every Friday full-day closure on the live calendar, which is seeded with NYSE closures through 2028. The holiday set is maintained by the listing role, whose changes wait one hour; a year the listing role has not seeded has no valid expiries, so no series can be created in it until it does. Check the series page for its actual expiry before trading. New series can be created at most 45 days ahead. **Writing stops 30 minutes before expiry**, when the settlement averaging window begins. Existing long tokens can be resold in the book until expiry.
 
 ## Related
 

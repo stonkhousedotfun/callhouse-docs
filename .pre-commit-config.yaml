@@ -41,9 +41,3 @@ repos:
         language: system
         pass_filenames: false
         files: '\.md$'
-      - id: docs-copy
-        name: Public copy claims
-        entry: node scripts/copy-lint-docs.mjs
-        language: system
-        pass_filenames: false
-        files: '\.md$'

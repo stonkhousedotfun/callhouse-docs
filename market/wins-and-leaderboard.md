@@ -3,7 +3,7 @@
 Learn how realised wins are calculated and which trades qualify for public rankings.
 
 {% hint style="warning" %}
-Stonkhouse v2 is unaudited. The chain-4663 contracts first deployed for the dev launch are the live public contract set. Only NVDA is registered; other markets remain planned. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
+Stonkhouse v2 is unaudited. Interface v8 is deployed on Robinhood Chain 4663 from block 69,512,673 (22 September 2026); the launch markets are NVDA and SPCX. Registered markets can change; check the current app and on-chain status before trading. Operational services and market liquidity may be unavailable. Stock Tokens carry market and issuer risks. Buyers can lose their full cost; writers can lose collateral. Stonkhouse is not available to US persons. Read [Risks](../resources/risks.md) before using the product.
 {% endhint %}
 
 ## What the feed shows
@@ -14,7 +14,7 @@ The feed shows wins, not every trade. **Most options expire worthless.** A large
 
 ## How a result is counted
 
-The indexer builds long-position cost from fills in first-in, first-out order and includes taker fees. In-kind settlement is valued at the settlement price. A public win excludes self-fills, positions with total cost below **0.10 USDG**, and fills priced below **25% of the fair value** at fill time. A position whose ownership or price history cannot be reconciled is flagged or omitted rather than presented as a verified win. These filters reduce obvious gaming; they cannot prove that two wallets are unrelated or remove every unusual trade.
+The indexer builds long-position cost from fills in first-in, first-out order and includes taker fees. In-kind settlement is valued at the settlement price. A public win excludes self-fills, positions with total cost below **0.10 USDG**, and positions with a fill priced below **25% of a reference price** built from fills taken by other wallets in the same series within an hour of the fill; where no such fills exist there is no reference and the price test does not apply. Positions that received or sent units by transfer are also excluded. A position whose ownership or price history cannot be reconciled is flagged or omitted rather than presented as a verified win. These filters reduce obvious gaming; they cannot prove that two wallets are unrelated or remove every unusual trade.
 
 P&L cards show actual resale proceeds and USDG-equivalent redemption value where applicable, against the cost that produced them. An in-kind redemption remains Stock Tokens in the wallet or ledger even when the card displays its USDG value. These cards do not forecast another contract's payout. Each option's maximum loss remains its full purchase cost, including fees.
 

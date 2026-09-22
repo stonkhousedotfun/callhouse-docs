@@ -28,6 +28,7 @@
 
 * [Order book](market/order-book.md)
 * [Fees](product/fees.md)
+* [Where fees go](product/where-fees-go.md)
 * [Market makers](market/market-makers.md)
 * [Markets](product/markets.md)
 * [Wins and leaderboard](market/wins-and-leaderboard.md)
@@ -44,8 +45,9 @@
 * [Addresses](protocol/addresses.md)
 * [Security](protocol/security.md)
 
-## Legacy (v1)
+## Legacy
 
+* [Interface v7 reference](legacy/v7-reference.md)
 * [Moving from v1](legacy/moving-from-v1.md)
 * [v1 reference](legacy/v1-reference.md)
 
